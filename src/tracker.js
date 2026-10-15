@@ -1,4 +1,4 @@
-import {CpuFaceTracker} from './cpu-tracker.js?v=1.0.4';
+import {CpuFaceTracker} from './cpu-tracker.js?v=1.0.5';
 // One in-flight frame; use a worker first, then a browser-canvas compatibility path.
 export class FaceTracker {
   constructor({forceMain=false}={}) {this.worker=null;this.pending=new Map();this.serial=0;this.busy=false;this.ready=false;this.initPromise=null;this.mainModel=null;this.cpuModel=null;this.mainMode='IMAGE';this.mainCount=8;this.forceMain=forceMain;this.backend='not started';}
@@ -7,7 +7,7 @@ export class FaceTracker {
     this.initPromise=(async()=>{
       const probe=document.createElement('canvas');if(!probe.getContext('webgl2')){await this.startCpu();return;}
       if(this.forceMain){await this.startMain();return;}
-      this.worker=new Worker(new URL('./face-worker.js?v=1.0.4',import.meta.url));
+      this.worker=new Worker(new URL('./face-worker.js?v=1.0.5',import.meta.url));
       this.worker.onmessage=({data})=>{const p=this.pending.get(data.id);if(!p)return;clearTimeout(p.timer);this.pending.delete(data.id);data.error?p.reject(new Error(data.error)):p.resolve(data.landmarks||[]);};
       this.worker.onerror=e=>this.fail(new Error(e.message||'The worker tracker could not load.'));
       try{await this.send({});this.backend='worker';this.ready=true;}catch(e){console.warn('Worker initialization failed; trying compatibility mode.',e.message);await this.startMain();}
