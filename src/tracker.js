@@ -5,7 +5,7 @@ export class FaceTracker {
     if(this.initPromise)return this.initPromise;
     this.initPromise=(async()=>{
       if(this.forceMain){await this.startMain();return;}
-      this.worker=new Worker(new URL('./face-worker.js',import.meta.url));
+      this.worker=new Worker(new URL('./face-worker.js?v=1.0.3',import.meta.url));
       this.worker.onmessage=({data})=>{const p=this.pending.get(data.id);if(!p)return;clearTimeout(p.timer);this.pending.delete(data.id);data.error?p.reject(new Error(data.error)):p.resolve(data.landmarks||[]);};
       this.worker.onerror=e=>this.fail(new Error(e.message||'The worker tracker could not load.'));
       try{await this.send({});this.backend='worker';this.ready=true;}catch(e){console.warn('Worker initialization failed; trying compatibility mode.',e.message);await this.startMain();}
