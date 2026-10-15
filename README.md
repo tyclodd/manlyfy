@@ -25,10 +25,10 @@ This is a static, buildless app. Serve this directory over HTTPS or localhost wi
 Third-party runtime assets are pinned to `@mediapipe/tasks-vision` **0.10.32** and the float16 Face Landmarker model, version **1**. `python scripts/vendor.py` reproduces their download from official Google storage and the NPM CDN. The CJS bundle is renamed to `.js`, with an `exports` shim inside a classic worker so MediaPipe's WASM loader can use `importScripts`.
 
 - `src/app.js`: UI, camera lifecycle, editing, rendering, exports and MediaRecorder.
-- `src/face-worker.js`, `src/tracker.js`: off-main-thread inference, bounded frame queue, timeouts.
+- `src/face-worker.js`, `src/tracker.js`: worker-first inference with an automatic browser-canvas compatibility path, bounded frame queue and timeouts. Compatibility mode can have lower frame rates.
 - `src/core.js`: geometry, smoothing, output fitting, codec selection and permission errors.
 - `src/designs.js`: original vector artwork, all 73 designs.
-- `qa/`: browser verification lab; synthetic media tests, responsive iframe and honest hardware limitations. Not indexed; no real camera or mic is used by the lab.
+- `qa/`: browser verification lab; synthetic media tests, responsive iframe and an explicitly labeled `?test-camera=1` app route. The test route feeds an animated public-domain image and optional synthetic audio through the actual camera/recording UI. Not indexed; no real camera or mic is used by the lab.
 - `sw.js`: app shell and same-origin asset caching. Increment `VERSION` whenever changing shipped assets.
 
 GitHub Pages serves the `main` branch root. `.nojekyll` keeps this as plain static files. No build service, API keys or paid infrastructure is needed.

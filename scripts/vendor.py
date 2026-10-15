@@ -6,7 +6,7 @@ urls={
 'assets/qa-portrait-rotated.jpg':'https://storage.googleapis.com/mediapipe-assets/portrait_rotated.jpg',
 'assets/face_landmarker.task':'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
 }
-for name in ['vision_bundle.js','wasm/vision_wasm_internal.js','wasm/vision_wasm_internal.wasm','wasm/vision_wasm_nosimd_internal.js','wasm/vision_wasm_nosimd_internal.wasm']:
+for name in ['vision_bundle.js','vision_bundle.mjs','wasm/vision_wasm_internal.js','wasm/vision_wasm_internal.wasm','wasm/vision_wasm_nosimd_internal.js','wasm/vision_wasm_nosimd_internal.wasm']:
  urls['assets/'+name.split('/')[-1]]='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/'+('vision_bundle.cjs' if name=='vision_bundle.js' else name)
 urls['assets/MEDIAPIPE-LICENSE.txt']='https://raw.githubusercontent.com/google-ai-edge/mediapipe/master/LICENSE'
 def get(item):
