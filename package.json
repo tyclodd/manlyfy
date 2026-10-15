@@ -1,1 +1,1 @@
-{"name":"manlyfy","version":"1.0.0","private":true,"type":"module","scripts":{"test":"node --test tests/core.test.js","check":"node --check src/app.js && node --check src/face-worker.js && node --check src/tracker.js && node --check sw.js && npm test"}}
+{"name":"manlyfy","version":"1.0.1","private":true,"type":"module","scripts":{"test":"node --test tests/core.test.js","check":"node --check src/app.js && node --check src/face-worker.js && node --check src/tracker.js && node --check sw.js && npm test"}}

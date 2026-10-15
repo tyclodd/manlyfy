@@ -1,4 +1,4 @@
-const VERSION='manlyfy-1.0.0';
+const VERSION='manlyfy-1.0.1';
 const SHELL=['./','index.html','styles.css','src/app.js','src/core.js','src/designs.js','src/tracker.js','src/face-worker.js','assets/icons/icon.svg','assets/crew.svg','manifest.webmanifest','assets/icon-192.png','assets/icon-512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(VERSION).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('manlyfy-')&&k!==VERSION).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
