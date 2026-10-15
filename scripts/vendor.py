@@ -2,8 +2,8 @@ import urllib.request,concurrent.futures,pathlib
 root=pathlib.Path(__file__).resolve().parents[1]
 urls={
 'assets/demo-astronaut.png':'https://raw.githubusercontent.com/scikit-image/scikit-image/v0.21.0/skimage/data/astronaut.png',
-'qa/portrait.jpg':'https://storage.googleapis.com/mediapipe-assets/portrait.jpg',
-'qa/portrait-turn.jpg':'https://storage.googleapis.com/mediapipe-assets/portrait_rotated.jpg',
+'assets/qa-portrait.jpg':'https://storage.googleapis.com/mediapipe-assets/portrait.jpg',
+'assets/qa-portrait-rotated.jpg':'https://storage.googleapis.com/mediapipe-assets/portrait_rotated.jpg',
 'assets/face_landmarker.task':'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
 }
 for name in ['vision_bundle.js','wasm/vision_wasm_internal.js','wasm/vision_wasm_internal.wasm','wasm/vision_wasm_nosimd_internal.js','wasm/vision_wasm_nosimd_internal.wasm']:
