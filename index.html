@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14151d"><meta name="description" content="The Manliest Camera on Earth. Add playful nose plasters to photos and live videos. Free, private, no watermark.">
+<meta property="og:title" content="MANLYFY — The Manliest Camera on Earth"><meta property="og:description" content="One tiny plaster. Unreasonable amounts of MANLY. Free photo & video camera. 73 original patches. All on your device."><meta property="og:type" content="website">
+<title>MANLYFY — The Manliest Camera on Earth</title>
+<link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="assets/icon-192.png"><link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
+<symbol id="i-camera" viewBox="0 0 24 24"><path d="M8 6l2-3h4l2 3h4a2 2 0 0 1 2 2v11H2V8a2 2 0 0 1 2-2z"/><circle cx="12" cy="12" r="4"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="8" cy="8" r="1.5"/><path d="m3 17 6-6 5 5 3-3 4 4"/></symbol>
+<symbol id="i-flip" viewBox="0 0 24 24"><path d="M4 8a9 9 0 0 1 15-3l2 3M20 16a9 9 0 0 1-15 3l-2-3M21 2v6h-6M3 22v-6h6"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6zM8 12l3 3 5-6"/></symbol>
+<symbol id="i-dice" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M7 7h.01M17 7h.01M12 12h.01M7 17h.01M17 17h.01" stroke-width="3.5"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><path d="M12 16V2m-5 5 5-5 5 5M5 11H3v10h18V11h-2"/></symbol>
+<symbol id="i-group" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M1 22v-4a8 8 0 0 1 16 0v4M17 3a4 4 0 0 1 0 8m3 3a8 8 0 0 1 3 7"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+<symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 2 3 7 7 3-7 3-3 7-3-7-7-3 7-3z"/></symbol>
+<symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+<symbol id="i-mic" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="13" rx="4"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v4m-4 0h8"/></symbol>
+</defs></svg>
+<header class="site-header">
+<a class="brand" href="./" aria-label="MANLYFY home"><img src="assets/icons/icon.svg" width="39" height="39" alt=""><span>MANLYFY<span class="brand-dot">.</span></span></a>
+<span class="tagline">The Manliest Camera on Earth.</span>
+<div class="header-actions"><span class="free-badge">100% FREE. 200% MANLY.</span><button class="quiet" id="installBtn" aria-label="Install MANLYFY"><svg class="icon"><use href="#i-download"/></svg><span>Install app</span></button><button class="help-button" id="helpBtn" aria-label="Help and privacy">?</button></div>
+</header>
+<main>
+<div class="intro"><div><p class="eyebrow"><span></span> TINY PATCH. BIG ENERGY.</p><h1>Your face. <em>But MANLIER.</em></h1></div><p>Unreasonably cute plasters.<br>Unquestionably manly results.</p></div>
+<div class="app-layout">
+<section class="camera-section" aria-label="Camera and photo editor">
+<div class="camera-shell">
+<div class="camera-toolbar"><div class="mode-switch" role="group" aria-label="Camera mode"><button id="photoMode" class="active" aria-pressed="true">Photo</button><button id="videoMode" aria-pressed="false">Video</button></div><div class="toolbar-right"><label class="sr-only" for="ratio">Output format</label><select id="ratio" title="Output format"><option value="original">Original</option><option value="vertical">9:16 Story</option><option value="square">1:1 Square</option></select><button id="compareBtn" class="compare" aria-pressed="false" disabled>Before / After</button></div></div>
+<div class="viewfinder" id="viewfinder">
+<canvas id="stage" width="720" height="900" tabindex="0" aria-label="Photo preview. Drag a plaster to move it. Arrow keys move the selected plaster." hidden></canvas>
+<div class="welcome" id="welcome">
+<div class="welcome-art" aria-hidden="true"><span class="orbit o1">✦</span><span class="orbit o2">✧</span><span class="orbit o3">+</span><img src="assets/crew.svg" alt="" width="400" height="300"><span class="art-sticker">CERTIFIED<br><strong>MANLY</strong></span></div>
+<h2>A tiny patch.<br><span>A massive upgrade.</span></h2><p>Your nose has been waiting for this.</p>
+<button id="enableCamera" class="button primary"><svg class="icon"><use href="#i-camera"/></svg>Let’s get MANLY</button>
+<button id="welcomeUpload" class="text-button">or upload a photo <span>↗</span></button>
+<button id="demoBtn" class="demo-button">Just looking? Try a demo</button>
+<p class="permission-note"><svg class="icon"><use href="#i-shield"/></svg> Your camera opens only when you say so.</p>
+</div>
+<div class="preview-head" id="previewHead" hidden><span id="liveBadge" class="live-badge"><i></i> LIVE</span><button id="stopCamera" class="glass-button">Camera off</button></div>
+<div class="recording-badge" id="recordingBadge" hidden><i></i><span id="timer">00:00</span></div>
+<div class="busy" id="busy" hidden><span class="spinner"></span><strong id="busyText">Finding your inner MANLY…</strong><span>Everything happens on your device.</span></div>
+<div class="face-status" id="faceStatus" role="status" hidden><span class="status-dot"></span><span id="faceStatusText">Looking for a nose…</span></div>
+<div class="flash" id="flash"></div>
+</div>
+<div class="capture-bar"><button class="side-control" id="uploadBtn"><svg class="icon"><use href="#i-upload"/></svg><span>Upload</span></button><div class="shutter-wrap"><button id="shutter" class="shutter" aria-label="Open camera"><span></span></button><span id="shutterHint">TAP TO GET MANLY</span></div><button class="side-control" id="flipBtn" disabled><svg class="icon"><use href="#i-flip"/></svg><span>Flip</span></button></div>
+</div>
+<div class="camera-options"><label class="switch-option"><input id="groupToggle" type="checkbox" checked><span class="toggle-track"></span><svg class="icon"><use href="#i-group"/></svg>Group mode</label><label class="switch-option" id="audioOption" hidden><input id="audioToggle" type="checkbox"><span class="toggle-track"></span><svg class="icon"><use href="#i-mic"/></svg>Mic <span id="micState">off</span></label><label class="performance"><span>Performance</span><select id="quality"><option value="balanced">Balanced</option><option value="lite">Lite · older phones</option></select></label></div>
+<div id="notice" class="notice" role="status" hidden></div>
+<div id="editor" class="editor" hidden>
+<div class="editor-top"><h2>Fine-tune your MANLY</h2><label class="sr-only" for="noseSelect">Select a plaster to adjust</label><select id="noseSelect"></select></div>
+<p class="muted">Drag a plaster into place. Fine-tune below.</p>
+<div class="sliders"><label>Size <output id="sizeValue">100%</output><input type="range" id="size" min="35" max="220" value="100"></label><label>Rotation <output id="rotationValue">0°</output><input type="range" id="rotation" min="-90" max="90" value="0"></label></div>
+<div class="editor-buttons"><button id="addPatch" class="quiet">＋ Add plaster</button><button id="removePatch" class="quiet">Remove selected</button><button id="redetect" class="quiet">Auto-detect again</button><button id="mixGroup" class="quiet">Mix the group</button></div>
+<div class="rating"><svg class="icon"><use href="#i-spark"/></svg><div><strong id="ratingText">Manliness level: excessive.</strong><span>Completely made up. Scientifically unserious.</span></div><button id="rerate" class="quiet" aria-label="Get another funny manliness rating">↻</button></div>
+<div class="export-actions"><button class="button primary" id="savePhoto"><svg class="icon"><use href="#i-download"/></svg>Download photo</button><button class="button secondary" id="sharePhoto"><svg class="icon"><use href="#i-share"/></svg>Share</button><button class="text-button" id="retake">Back to camera</button></div>
+</div>
+<div class="privacy-line"><svg class="icon"><use href="#i-shield"/></svg><span>Your photos stay yours. Processed on your device. No uploads.</span></div>
+</section>
+<aside class="wardrobe" aria-label="Plaster collection">
+<div class="wardrobe-heading"><div><p class="eyebrow">THE PATCH COLLECTION</p><h2>Pick your personality<span>.</span></h2></div><span class="count-bubble" id="collectionCount">73</span></div>
+<p class="wardrobe-subtitle">Small plaster. Main character energy.</p>
+<button id="roulette" class="roulette"><svg class="icon"><use href="#i-dice"/></svg><span>Band-Aid Roulette<small>Let fate pick your flavour of MANLY.</small></span><span class="roulette-arrow">↗</span></button>
+<div class="selected-patch"><span class="mini-label">ON YOUR NOSE</span><strong id="selectedName">The Original</strong><span class="selected-check"><svg class="icon"><use href="#i-check"/></svg></span></div>
+<div class="categories" id="categories" role="group" aria-label="Plaster categories"></div>
+<div class="patch-grid" id="patchGrid" role="group" aria-label="Choose a plaster design"></div>
+<div class="collection-foot"><svg class="icon"><use href="#i-spark"/></svg><span>72 original designs + one timeless classic.<br>All free. All unapologetically adorable.</span></div>
+</aside>
+</div>
+<div class="bottom-note"><span>FOR EVERY FACE. EVERYONE’S INVITED.</span><span>ZERO WATERMARKS. ZERO SERIOUSNESS.</span><button class="text-button" id="privacyBtn">Privacy & help</button></div>
+</main>
+<input type="file" id="fileInput" accept="image/*" hidden><video id="sourceVideo" autoplay muted playsinline hidden></video>
+<dialog id="helpDialog"><div class="dialog-head"><h2>Small patch. Big questions.</h2><button class="icon-button" data-close="helpDialog" aria-label="Close help"><svg class="icon"><use href="#i-close"/></svg></button></div><div class="help-content">
+<h3>How to get MANLY</h3><p>Open the camera or upload a photo. Pick a plaster. In Photo mode, tap the shutter to freeze and fine-tune. In Video mode, tap to record and tap again to stop.</p><h3>Your face stays on your device.</h3><p>Photos, camera frames, audio, and face landmarks are processed in your browser. MANLYFY does not upload them. There are no accounts, ads, analytics, or subscriptions. Your browser downloads the app and face-tracking model from this website. Only your design and display preferences may be stored locally.</p><h3>Camera & microphone</h3><p>The camera needs HTTPS and browser permission. The microphone is optional and off by default; turn it on in Video mode before recording. Denying the mic still allows silent video. Camera and mic stop when you leave the tab or turn the camera off.</p><h3>Nose not cooperating?</h3><p>Face forward in even light, with your whole face visible. Group mode finds up to 8 faces in photos and 4 live. Small, covered, dark, or strongly sideways faces may be missed. For photos, add and drag a plaster manually. For slower phones choose Lite mode.</p><h3>Downloads & sharing</h3><p>Photos download as watermark-free PNG files, up to 2560 pixels. 9:16 and square formats fit your whole photo with a dark border. Videos record at up to 1280 pixels and download as WebM or MP4 according to your browser. Some social apps need a format conversion. Native file sharing appears where supported; otherwise download and share from your gallery.</p><h3>Install & offline</h3><p>On Android Chrome, tap Install app or use the browser menu → Add to Home screen. On iPhone Safari, use Share → Add to Home Screen. After the tracker has loaded once online, previously loaded app and tracking files can be reused offline. Browser storage can be cleared or evicted.</p><h3>A few honest limits</h3><p>Recording requires MediaRecorder and canvas capture support. Record with the tab visible; switching away stops the recording. Clips stop at 3 minutes to protect phone memory. Tracking is a playful 2D effect, not a perfect 3D wrap. Real Android devices and low-powered hardware still need hands-on testing.</p><p class="muted">BAND-AID is a third-party trademark. MANLYFY’s illustrated adhesive-plaster filters are original and unaffiliated. Demo photo: NASA, public domain, via scikit-image. Entertainment only.</p></div></dialog>
+<dialog id="resultDialog"><div class="dialog-head"><h2>MANLYFICATION complete.</h2><button class="icon-button" data-close="resultDialog" aria-label="Close video preview"><svg class="icon"><use href="#i-close"/></svg></button></div><video id="resultVideo" controls playsinline></video><p id="resultInfo"></p><div class="export-actions"><button class="button primary" id="saveVideo"><svg class="icon"><use href="#i-download"/></svg>Download video</button><button class="button secondary" id="shareVideo"><svg class="icon"><use href="#i-share"/></svg>Share</button></div><p class="muted">The plaster is baked into your video. No watermark.</p></dialog>
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<noscript><p class="notice">MANLYFY needs JavaScript for its local photo and video editor.</p></noscript>
+<script type="module" src="src/app.js"></script>
+</body></html>

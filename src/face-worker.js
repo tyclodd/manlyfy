@@ -1,0 +1,5 @@
+self.exports={};
+importScripts('../assets/vision_bundle.js');
+const vision=self.exports;
+let model,mode='IMAGE',count=8;
+self.onmessage=async({data})=>{const{id,bitmap,runningMode='IMAGE',numFaces=8,time=0}=data;try{if(!model){const files=await vision.FilesetResolver.forVisionTasks(new URL('../assets/',self.location.href).href);model=await vision.FaceLandmarker.createFromOptions(files,{baseOptions:{modelAssetPath:new URL('../assets/face_landmarker.task',self.location.href).href,delegate:'CPU'},runningMode:mode,numFaces:count,minFaceDetectionConfidence:.45,minFacePresenceConfidence:.45,minTrackingConfidence:.45,outputFaceBlendshapes:false,outputFacialTransformationMatrixes:false});}if(mode!==runningMode||count!==numFaces){await model.setOptions({runningMode,numFaces});mode=runningMode;count=numFaces;}const result=bitmap?(mode==='VIDEO'?model.detectForVideo(bitmap,time):model.detect(bitmap)):null;self.postMessage({id,landmarks:result?.faceLandmarks||[],ready:true});}catch(e){self.postMessage({id,error:e.message||String(e)});}finally{bitmap?.close();}};
