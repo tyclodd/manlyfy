@@ -1,6 +1,6 @@
-import {FaceTracker} from '../src/tracker.js?v=1.0.3';
-import {DESIGNS,loadPatchImage} from '../src/designs.js?v=1.0.3';
-import {landmarkToPatch,containRect,patchPose,recordingMime} from '../src/core.js?v=1.0.3';
+import {FaceTracker} from '../src/tracker.js?v=1.0.4';
+import {DESIGNS,loadPatchImage} from '../src/designs.js?v=1.0.4';
+import {landmarkToPatch,containRect,patchPose,recordingMime} from '../src/core.js?v=1.0.4';
 const $=id=>document.getElementById(id),tracker=new FaceTracker();let blob,ac;
 const report=(text,pass=true)=>{$('results').textContent+=`\n${pass?'PASS':'FAIL'} · ${text}`;};
 async function load(url){const i=new Image();i.src=url;await i.decode();return i;}
@@ -10,7 +10,7 @@ function sample(name,c){const div=document.createElement('div');div.className='s
 $('run').onclick=async()=>{
  ac=new AudioContext();await ac.resume();$('run').disabled=true;$('results').textContent='Running real MediaPipe model and browser codec checks…';$('samples').replaceChildren();
  try{
- const diagnostic=document.createElement('canvas');report(`Browser WebGL2 available: ${!!diagnostic.getContext('webgl2')}`);const offscreen=new OffscreenCanvas(16,16);report(`Worker-capable OffscreenCanvas WebGL2 available: ${!!offscreen.getContext('webgl2')}`);const t=performance.now();await tracker.init();report(`MediaPipe initialized in ${Math.round(performance.now()-t)} ms`);
+ const diagnostic=document.createElement('canvas');report(`Graphics check · WebGL2 available: ${!!diagnostic.getContext('webgl2')}`);const offscreen=new OffscreenCanvas(16,16);report(`Graphics check · OffscreenCanvas WebGL2 available: ${!!offscreen.getContext('webgl2')}`);const t=performance.now();await tracker.init();report(`Face tracker initialized in ${Math.round(performance.now()-t)} ms`);
  const original=await load('../assets/demo-astronaut.png'),portrait=await load('../assets/qa-portrait.jpg'),turned=await load('../assets/qa-portrait-rotated.jpg'),patch=await loadPatchImage('dino');
  const cases=[['Single face · NASA portrait',original,1]];
  const group=canvas(1024,512);group.getContext('2d').drawImage(original,0,0,512,512);group.getContext('2d').drawImage(original,512,0,512,512);cases.push(['Multiple faces · two-person composite',group,2]);

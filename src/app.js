@@ -1,6 +1,6 @@
-import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.0.3';
-import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,recordingMime,formatTime,cameraError} from './core.js?v=1.0.3';
-import {FaceTracker} from './tracker.js?v=1.0.3';
+import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.0.4';
+import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,recordingMime,formatTime,cameraError} from './core.js?v=1.0.4';
+import {FaceTracker} from './tracker.js?v=1.0.4';
 const $=id=>document.getElementById(id);
 const stage=$('stage'),ctx=stage.getContext('2d',{alpha:false}),video=$('sourceVideo');
 const tracker=new FaceTracker(),images=new Map();
@@ -8,7 +8,7 @@ let design='classic',category='All patches',mode='photo',photo=null,live=false,s
 let patches=[],selected=null,compare=false,epoch=0,lastInfer=0,lastTracked=0,lastDraw=0,raf=0,working=false;
 let recorder=null,recordStream=null,recording=false,chunks=[],recordBytes=0,recordStarted=0,resultBlob=null,resultUrl=null,photoUrl=null;
 const testCamera=new URLSearchParams(location.search).get('test-camera')==='1';
-let testRaf=0,testAudio=null;
+let testRaf=0,testAudio=null,micPending=false,micRequest=0;
 let drag=null,toastTimer=null,deferredInstall=null,recordTimer=null,recordFailed=false;
 const ratings=['147% MANLY · May require a larger doorway.','208% MANLY · Dinosaurs are asking for tips.','112% MANLY · Officially too powerful for errands.','999% MANLY · The meter has resigned.','183% MANLY · Your nose has been promoted.','156% MANLY · Small plaster. Enormous authority.','301% MANLY · Approved by absolutely no scientists.','124% MANLY · Could open a slightly stubborn jar.','240% MANLY · Your reflection asked for a selfie.'];
 function toast(message){clearTimeout(toastTimer);$('toast').textContent=message;$('toast').hidden=false;toastTimer=setTimeout(()=>$('toast').hidden=true,4200);}
@@ -39,11 +39,11 @@ function updateControls(){
   $('audioOption').hidden=mode!=='video';$('previewHead').hidden=!live;$('recordingBadge').hidden=!recording;
   $('flipBtn').disabled=!live||working||recording;$('compareBtn').disabled=(!photo&&!live)||recording||working;
   $('editor').hidden=!photo||live||mode==='video';$('shutter').classList.toggle('video',mode==='video');$('shutter').classList.toggle('recording',recording);
-  $('shutter').disabled=working||(live&&mode==='video'&&!tracker.ready);
+  $('shutter').disabled=working||micPending||(live&&mode==='video'&&!tracker.ready);
   $('shutter').setAttribute('aria-label',recording?'Stop recording':!live?'Open camera':mode==='video'?'Start recording':'Take photo');
   $('shutterHint').textContent=recording?'TAP TO STOP':!live?'TAP TO GET MANLY':mode==='video'?'TAP TO RECORD':'TAP TO SNAP';
   for(const id of ['photoMode','videoMode','ratio','groupToggle','quality','uploadBtn','roulette','demoBtn'])$(id).disabled=recording||working;
-  $('audioToggle').disabled=recording||working;
+  $('audioToggle').disabled=recording||working||micPending;
   $('savePhoto').disabled=working||!photo;$('sharePhoto').disabled=working||!photo;
   $('stopCamera').disabled=working; // Always available during recording.
   document.querySelectorAll('.patch-card,.category').forEach(b=>b.disabled=recording);
@@ -87,11 +87,16 @@ async function openPhoto(file,isDemo=false){
   try{const c=await decodePhoto(file);if(token!==epoch)return;stopLive(false);photo=c;mirrored=false;mode='photo';patches=[];selected=null;compare=false;$('compareBtn').setAttribute('aria-pressed','false');showMedia();resize();rate();updateControls();if(isDemo)notice('Demo: NASA astronaut Eileen Collins, public-domain photograph. Your own uploads stay on your device.');await detectPhoto(epoch);}
   catch(e){busy(false);notice(e.message);}
 }
-function stopMic(){if(testAudio){testAudio.close().catch(()=>{});testAudio=null;}micStream?.getTracks().forEach(t=>t.stop());micStream=null;$('micState').textContent='off';}
+function stopMic(){micRequest++;micPending=false;if(testAudio){testAudio.close().catch(()=>{});testAudio=null;}micStream?.getTracks().forEach(t=>t.stop());micStream=null;$('micState').textContent='off';}
 async function enableMic(){
   if(!live||mode!=='video'){toast('The mic will ask for permission when the video camera opens.');return;}
-  try{micStream=testCamera?await testMicrophone():await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});if(!live||mode!=='video'||!$('audioToggle').checked){stopMic();return;}$('micState').textContent='on';toast('Mic on. Your voice stays in your recording.');}
-  catch(e){$('audioToggle').checked=false;stopMic();notice('Microphone access was not available. You can record a silent video. Allow microphone access in browser site settings to add audio.');}
+  const request=++micRequest;micPending=true;updateControls();
+  try{
+    const candidate=testCamera?await testMicrophone():await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true},video:false});
+    if(request!==micRequest||!live||mode!=='video'||!$('audioToggle').checked){candidate.getTracks().forEach(t=>t.stop());return;}
+    micStream=candidate;$('micState').textContent='on';toast(testCamera?'Test audio on: a synthetic tone.':'Mic on. Your voice stays in your recording.');
+  }catch(e){if(request!==micRequest)return;$('audioToggle').checked=false;stopMic();notice('Microphone access was not available. You can record a silent video. Allow microphone access in browser site settings to add audio.');}
+  finally{if(request===micRequest)micPending=false;updateControls();}
 }
 function frozenSource(){if(video.readyState<2||!video.videoWidth)return null;const c=document.createElement('canvas');const s=Math.min(1,2560/Math.max(video.videoWidth,video.videoHeight));c.width=Math.round(video.videoWidth*s);c.height=Math.round(video.videoHeight*s);c.getContext('2d').drawImage(video,0,0,c.width,c.height);return c;}
 function stopLive(preserve=true){
@@ -210,4 +215,4 @@ window.addEventListener('pagehide',()=>{stopLive(false);tracker.dispose();});
 try{const p=JSON.parse(localStorage.getItem('manlyfy-prefs')||'{}');if(DESIGNS.some(d=>d.id===p.design))design=p.design;if(['original','square','vertical'].includes(p.ratio))$('ratio').value=p.ratio;if(['lite','balanced'].includes(p.quality))$('quality').value=p.quality;if(typeof p.group==='boolean')$('groupToggle').checked=p.group;}catch{}
 if(testCamera){const n=document.createElement('p');n.className='notice';n.textContent='VERIFICATION MODE · Simulated camera and audio only. Open the normal app URL for your real camera.';document.querySelector('main').prepend(n);}
 buildCollection();ensureDesign(design).then(()=>selectDesign(design,false));updateControls();
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.0.3',{updateViaCache:'none'}).catch(()=>{}));
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.0.4',{updateViaCache:'none'}).catch(()=>{}));

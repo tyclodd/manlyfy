@@ -9,6 +9,10 @@ urls={
 for name in ['vision_bundle.js','vision_bundle.mjs','wasm/vision_wasm_internal.js','wasm/vision_wasm_internal.wasm','wasm/vision_wasm_nosimd_internal.js','wasm/vision_wasm_nosimd_internal.wasm']:
  urls['assets/'+name.split('/')[-1]]='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.32/'+('vision_bundle.cjs' if name=='vision_bundle.js' else name)
 urls['assets/MEDIAPIPE-LICENSE.txt']='https://raw.githubusercontent.com/google-ai-edge/mediapipe/master/LICENSE'
+urls['assets/face-api.min.js']='https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js'
+urls['assets/FACE-API-LICENSE.txt']='https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/LICENSE'
+for name in ['tiny_face_detector_model-weights_manifest.json','tiny_face_detector_model-shard1','face_landmark_68_tiny_model-weights_manifest.json','face_landmark_68_tiny_model-shard1']:
+ urls['assets/'+name]='https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights/'+name
 def get(item):
  name,url=item;p=root/name
  if p.exists():return name,'exists'

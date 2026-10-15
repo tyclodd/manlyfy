@@ -25,7 +25,7 @@ This is a static, buildless app. Serve this directory over HTTPS or localhost wi
 Third-party runtime assets are pinned to `@mediapipe/tasks-vision` **0.10.32** and the float16 Face Landmarker model, version **1**. `python scripts/vendor.py` reproduces their download from official Google storage and the NPM CDN. The CJS bundle is renamed to `.js`, with an `exports` shim inside a classic worker so MediaPipe's WASM loader can use `importScripts`.
 
 - `src/app.js`: UI, camera lifecycle, editing, rendering, exports and MediaRecorder.
-- `src/face-worker.js`, `src/tracker.js`: worker-first inference with an automatic browser-canvas compatibility path, bounded frame queue and timeouts. Compatibility mode can have lower frame rates.
+- `src/face-worker.js`, `src/tracker.js`: worker-first MediaPipe inference with automatic browser-canvas and CPU-only compatibility paths, bounded frame queue and timeouts. CPU compatibility mode can have lower frame rates; low-powered phones should prefer photos.
 - `src/core.js`: geometry, smoothing, output fitting, codec selection and permission errors.
 - `src/designs.js`: original vector artwork, all 73 designs.
 - `qa/`: browser verification lab; synthetic media tests, responsive iframe and an explicitly labeled `?test-camera=1` app route. The test route feeds an animated public-domain image and optional synthetic audio through the actual camera/recording UI. Not indexed; no real camera or mic is used by the lab.
@@ -49,7 +49,7 @@ See [the launch name screen](docs/NAME-RESEARCH.md). MANLYFY is a provisional la
 
 ## Credits and licenses
 
-MANLYFY code and original SVG artwork: MIT, see LICENSE. MediaPipe and its model: Google, Apache 2.0; see assets/MEDIAPIPE-LICENSE.txt and [upstream](https://github.com/google-ai-edge/mediapipe). Runtime assets are downloaded unchanged (except the CJS filename).
+MANLYFY code and original SVG artwork: MIT, see LICENSE. MediaPipe and its model: Google, Apache 2.0; see assets/MEDIAPIPE-LICENSE.txt and [upstream](https://github.com/google-ai-edge/mediapipe). Runtime assets are downloaded unchanged (except the CJS filename). The optional CPU fallback uses face-api.js 0.22.2 (MIT), with its tiny face detector and tiny 68-landmark models, self-hosted in assets/. Only face geometry is used; identity, recognition, demographic and expression models are never loaded. See assets/FACE-API-LICENSE.txt.
 
 Demo photo: NASA astronaut Eileen Collins, public-domain US government photograph, distributed with scikit-image. QA portrait and rotated copy: official White House portrait of Barack Obama by Pete Souza, public-domain US government photograph, from MediaPipe's public test assets. They are only test fixtures, not endorsements.
 
