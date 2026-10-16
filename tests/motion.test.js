@@ -33,3 +33,10 @@ test('switching live modes rejects a neural result from the previous motion hist
  assert.equal(tracker.seed([points()],old.id),false);assert.equal(tracker.landmarks().length,0);
  assert.equal(tracker.seed([points()],next.id),true);assert.equal(tracker.landmarks().length,1);
 });
+test('a paused imported frame keeps its anchor after slow initial inference and resumes following immediately',()=>{
+ const tracker=new MotionTracker({library});const frame=tracker.push(image(),width,height,0);tracker.seed([points()],frame.id);
+ tracker.resumePaused(10000);assert.equal(tracker.current.id,frame.id);
+ const m={a:1,b:0,x:1.5,y:.5};tracker.push(image(m),width,height,10034);
+ assert.equal(tracker.landmarks().length,1);assert.ok(error(tracker.landmarks()[0],m)<2.5);
+ tracker.resumePaused(30000);tracker.push(image(m),width,height,30034);assert.equal(tracker.landmarks().length,1);
+});

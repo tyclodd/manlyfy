@@ -1,8 +1,8 @@
-import {drawBandage} from '../src/render.js?v=1.3.1';
-import {detectPhotoFaces} from '../src/photo-tracker.js?v=1.3.1';
-import {FaceTracker} from '../src/tracker.js?v=1.3.1';
-import {DESIGNS,loadPatchImage} from '../src/designs.js?v=1.3.1';
-import {landmarkToPatch,containRect,patchPose,recordingMime} from '../src/core.js?v=1.3.1';
+import {drawBandage} from '../src/render.js?v=1.3.2';
+import {detectPhotoFaces} from '../src/photo-tracker.js?v=1.3.2';
+import {FaceTracker} from '../src/tracker.js?v=1.3.2';
+import {DESIGNS,loadPatchImage} from '../src/designs.js?v=1.3.2';
+import {landmarkToPatch,containRect,patchPose,recordingMime} from '../src/core.js?v=1.3.2';
 const $=id=>document.getElementById(id),tracker=new FaceTracker();let blob,ac;
 const report=(text,pass=true)=>{$('results').textContent+=`\n${pass?'PASS':'FAIL'} · ${text}`;};
 async function load(url){const i=new Image();i.src=url;await i.decode();return i;}

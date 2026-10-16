@@ -18,6 +18,13 @@ export class MotionTracker{
   async init(){this.lib ||= await engine();this.canvas=document.createElement('canvas');this.ctx=this.canvas.getContext('2d',{willReadFrequently:true});}
   reset(){this.history=[];this.faces=[];this.lastVideoTime=-1;this.updates=0;this.cost=0;this.current=null;}
   get hasFaces(){return this.faces.length>0;}
+  resumePaused(time){
+    // An imported clip does not move while inference or the user pauses it.
+    // Preserve that valid anchor instead of treating the pause as lost frames.
+    if(!this.current)return;const delta=time-this.current.time;if(delta<=0)return;
+    for(const frame of this.history)frame.time+=delta;
+    for(const face of this.faces){face.seeded+=delta;face.modelTime+=delta;}
+  }
   tick(source,time){
     if(!this.lib||!this.ctx||source.readyState<2||source.currentTime===this.lastVideoTime)return false;
     this.lastVideoTime=source.currentTime;this.capture(source,time);return true;

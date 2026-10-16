@@ -1,15 +1,15 @@
-import {progressAt,unlockPhoto,cleanCount} from './progress.js?v=1.3.1';
-import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.3.1';
-import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,recordingMime,formatTime,cameraError} from './core.js?v=1.3.1';
-import {drawBandage} from './render.js?v=1.3.1';
-import {FaceTracker} from './tracker.js?v=1.3.1';
-import {MotionTracker} from './motion.js?v=1.3.1';
-import {CameraClock} from './camera-clock.js?v=1.3.1';
-import {decodePhoto,photoSelection} from './photos.js?v=1.3.1';
-import {detectPhotoFaces} from './photo-tracker.js?v=1.3.1';
-import {startGesture,moveGesture} from './gestures.js?v=1.3.1';
-import {fingerprint,ratingFamily,manlinessScore,manlinessJoke} from './manliness.js?v=1.3.1';
-import {openVideoFile,seekVideo,originalAudio,suspendOriginalAudio} from './video-import.js?v=1.3.1';
+import {progressAt,unlockPhoto,cleanCount} from './progress.js?v=1.3.2';
+import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.3.2';
+import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,recordingMime,formatTime,cameraError} from './core.js?v=1.3.2';
+import {drawBandage} from './render.js?v=1.3.2';
+import {FaceTracker} from './tracker.js?v=1.3.2';
+import {MotionTracker} from './motion.js?v=1.3.2';
+import {CameraClock} from './camera-clock.js?v=1.3.2';
+import {decodePhoto,photoSelection} from './photos.js?v=1.3.2';
+import {detectPhotoFaces} from './photo-tracker.js?v=1.3.2';
+import {startGesture,moveGesture} from './gestures.js?v=1.3.2';
+import {fingerprint,ratingFamily,manlinessScore,manlinessJoke} from './manliness.js?v=1.3.2';
+import {openVideoFile,seekVideo,originalAudio,suspendOriginalAudio} from './video-import.js?v=1.3.2';
 const $=id=>document.getElementById(id);
 const stage=$('stage'),ctx=stage.getContext('2d',{alpha:false}),video=$('sourceVideo');
 const tracker=new FaceTracker(),motion=new MotionTracker(),images=new Map(),cameraClock=new CameraClock(video,time=>loop(time));
@@ -232,7 +232,7 @@ async function importVideo(file){
 }
 async function prepareClipFrame(token){
  motion.reset();tracker.resetVideo();motion.capture(video,performance.now());const found=await tracker.detect(motion.canvas,'VIDEO',$('groupToggle').checked?4:1,$('quality').value==='lite'?480:720);if(token!==epoch)return;
- motion.seed(found||[],motion.current.id);updateLivePatches(motion.landmarks(),performance.now());trackingHold=1000;lastInfer=performance.now();render();
+ motion.seed(found||[],motion.current.id);motion.resumePaused(performance.now());updateLivePatches(motion.landmarks(),performance.now());trackingHold=1000;lastInfer=performance.now();render();
 }
 async function processImportedClip(){
  if(!importedClip||recording||working)return;busy(true,'Preparing your filtered clip…');const token=epoch;
@@ -313,7 +313,7 @@ $('shutter').onclick=()=>recording?stopRecording():mode==='photo'?takePhoto():im
 $('flipBtn').onclick=()=>startCamera(facing==='user'?'environment':'user');
 for(const id of ['uploadBtn','welcomeUpload'])$(id).onclick=()=>(mode==='video'?$('videoFileInput'):$('fileInput')).click();$('chooseMorePhotos').onclick=()=>$('fileInput').click();
 $('videoFileInput').onchange=()=>{const file=$('videoFileInput').files[0];$('videoFileInput').value='';if(file)importVideo(file);};
-$('clipPlay').onclick=async()=>{if(!importedClip||recording)return;try{if(video.paused){await video.play();cameraClock.start();}else video.pause();updateControls();}catch{notice('This browser could not play the clip. Try a compatible MP4 or WebM.');}};
+$('clipPlay').onclick=async()=>{if(!importedClip||recording||working)return;const token=epoch;try{if(video.paused){busy(true,'Resuming your clip…');await tracker.whenIdle();if(token!==epoch)return;motion.resumePaused(performance.now());lastTracked=performance.now();lastInfer=lastTracked;await video.play();cameraClock.start();}else video.pause();}catch{if(token===epoch)notice('This browser could not play the clip. Try a compatible MP4 or WebM.');}finally{if(token===epoch)busy(false);}};
 $('clipSeek').onchange=async()=>{if(!importedClip||recording||working)return;const token=epoch,time=+$('clipSeek').value;cameraClock.stop();video.pause();busy(true,'Finding your nose at this moment…');try{await tracker.whenIdle();await seekVideo(video,time);if(token!==epoch)return;await prepareClipFrame(token);}catch(e){if(token===epoch)notice(e.message);}finally{if(token===epoch)busy(false);}};
 video.addEventListener('ended',()=>{if(!importedClip)return;if(recording)stopRecording();else updateControls();});
 $('fileInput').onchange=()=>{const files=Array.from($('fileInput').files);$('fileInput').value='';if(files.length)openPhotos(files);};
@@ -382,4 +382,4 @@ try{const p=JSON.parse(localStorage.getItem('manlyfy-prefs')||'{}');if(DESIGNS.s
 if(!canUse(design))design='classic';
 if(testCamera){const n=document.createElement('p');n.className='notice';n.textContent='VERIFICATION MODE · Simulated camera and audio only. Open the normal app URL for your real camera.';document.querySelector('main').prepend(n);}
 buildCollection();ensureDesign(design).then(()=>selectDesign(design,false));updateControls();
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.3.1',{updateViaCache:'none'}).catch(()=>{}));
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.3.2',{updateViaCache:'none'}).catch(()=>{}));
