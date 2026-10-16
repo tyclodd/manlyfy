@@ -4,6 +4,8 @@
 
 App: https://tyclodd.github.io/manlyfy/
 
+[Release screenshot](docs/screenshots/manlyfy-v1.1.2.jpg) · [Verification record](docs/TESTING.md) · [Name research](docs/NAME-RESEARCH.md)
+
 ## Features implemented
 
 - Photo upload, camera capture, local MediaPipe nose detection and group photos (up to 8 faces).
