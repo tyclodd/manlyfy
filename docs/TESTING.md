@@ -1,8 +1,44 @@
 # MANLYFY verification record
 
-16 October 2026 · Public release 1.2.2 · https://tyclodd.github.io/manlyfy/
+16 October 2026 · Public release 1.3.2 · https://tyclodd.github.io/manlyfy/
 
-## 1.2.2 tracking and camera-wardrobe revision
+## 1.3.2 uploads, editing, rating and branding revision
+
+The public app now accepts existing videos as well as multiple photos. A mode-specific local file picker replaces the photo-only upload flow. Imported clips can be previewed, paused and scrubbed before processing; audio uses a reusable local Web Audio graph. A paused clip retains its plaster. Processing restarts at the beginning with a fresh motion history and saves the filtered result automatically at the end.
+
+| Check | Observed result |
+| --- | --- |
+| Source checks | `npm run check`: syntax checks and all 28 Node tests passed. Tests cover real optical-flow sequences, delayed anchors, lifecycle handoffs, decoded-frame de-duplication, paused-clip anchor resumption, geometry, pinch/twist, image byte sniffing, crop mapping, score determinism, near-image grouping and progression through all 75 rewards. |
+| Multiple-photo native picker | Accepted three public fixtures in one selection. Tall/small-face image detected 1 face; two-person NASA/Grace composite detected 2; White House portrait detected 1. Previous/next restored the group image's 3 edited plasters after adding a manual one. |
+| Public photo lab | NASA portrait 1 face (3.89 s), tall/small-face fixture 1 (8.16 s), two-person composite 2 (8.66 s), White House portrait 1 (3.38 s), Grace Hopper with glasses 1 (3.46 s), 90-degree rotated fixture 1 (21.36 s), dim-light simulation 1 (3.46 s), bright-light simulation 1 (3.65 s). Verified CPU-worker fallback; these controlled fixtures do not establish accuracy on the user's private screenshot or actual head yaw. |
+| Artwork and codec regressions | All 75 SVG designs decoded; filtered PNG encoded/decoded at 512×512; 8/8 moving-frame neural detections. Diagnostic VP8/Opus video decoded and played. |
+| Mislabelled photo recovery | Native picker opened the public NASA PNG saved with a `.bin` extension and non-image MIME type. Byte sniffing recovered it; one face was detected and Save was enabled. |
+| Immediate photo save | One click on Save photo downloaded a PNG with no app confirmation or reward dialog. Repeated save kept the count at 4. The 3-photo unlock also announced without opening a modal. |
+| Real editor gesture handlers | Public editor lab: two synthetic touch pointers pinched to about 167%, twisted about 90 degrees, and a one-pointer drag moved the selected plaster. Selection outline remains a DOM element outside the export canvas. Physical multi-touch hardware is not tested. |
+| Rating UI | NASA fixture scored 10% before / 528% with plaster. Another punchline kept the percent; removing the plaster restored 10%; indicating a physical plaster produced 528%. Re-importing the identical source retained the 10% base. |
+| Existing video upload, audio and download | Native Video-mode picker accepted a 6-second, 720×960 H.264/AAC MP4 built from the public NASA fixture and a synthetic tone. The first frame found 1 nose. Processing completed locally and downloaded a 3,190,020-byte VP8/48 kHz Opus WebM, with 134 video frames through 5.856 s (22.71 encoded fps). Original audio decoded non-silently: mean −21.1 dB, peak −16.6 dB. All six one-second samples and the exact first encoded frame showed the plaster following the moving nose. This retest verifies the fix for an opening-frame tracking gap discovered during the initial upload test; paused anchors are now rebased to playback time. App playback advanced beyond 4 seconds. |
+| Imported-video controls and silent vertical output | Play preview advanced; scrubber paused and sought to 0.05 s, reacquiring 1 nose. Switched to Tiny T-Rex before processing. With original audio unchecked and 9:16 selected, downloaded a 540×960 H.264 MP4, 5.909 s / 1,231,296 bytes, with no audio track. |
+| Actual live camera UI | Labeled animated public-domain fixture plus optional synthetic mic tone through the real app controls. The final camera clock reported 27.5 tracked-motion updates/s, 28.3 preview fps. Downloaded 32.3-second 720×960 VP8/Opus clip contained 812 frames (25.1 encoded fps; p95 frame interval 70 ms), with non-silent audio (mean −21.4 dB, peak −18.3 dB). Five samples across the clip showed the curved plaster following the nose. This is a cloud-browser simulation, not phone hardware. |
+| Responsive layout | Actual app iframe at 320, 390 and 1024 px: document widths 305, 375 and 1009 px (scrollbar allowance), with no document-level overflow. |
+| Latest branding and support | Purple camera/lens plaster uses star → plane → star, matching the sister-app promo. App copy says Support the MANLINESS; no silly/silliness text remains. |
+| Cross-app navigation | Followed the public MANLYFY footer link to Manly Curses Generator, then its MANLYFY promo back to the canonical app URL. The returned app loaded 1.3.2. |
+| Reusable kit | ZIP contains all 75 original SVGs and PNGs, tier/milestone manifest, icons, geometry/renderer modules and an interactive example. No private reference photo or test portrait is in the kit. |
+
+Photo scans can take several seconds on the CPU fallback, especially rotated images and small-face crop searches. Progress is visible and Stop search opens manual editing. Video processing runs in real time with the tab visible, up to 3 minutes / 150 MB input; recording still stops near 100 MB output. Original audio and final codecs depend on browser support. All test media above are public fixtures or generated tones; no private user media was uploaded or published.
+
+The camera frame loop now uses decoded-frame callbacks with a timer fallback, decoder frame counters to suppress duplicates, current optical-flow poses without extra easing, and cached curved artwork. These changes reduce repeated work and avoid queued stale frames; they do not establish real-phone latency. Physical Android Chrome, front/rear camera, microphone permission/input, actual head turns, lower-powered hardware and touch gestures still need device testing.
+
+The public motion lab uses the same optical-flow and canvas renderer with a known 2D transform. Its timer accounts for non-integral frame intervals so Lite sampling does not accidentally halve its update rate. Final 1.3.2 checks both passed:
+
+| Mode | Updates/s | Tracked coverage | Nose error, mean / p95 | Mean flow step | UI heartbeat |
+| --- | --- | --- | --- | --- | --- |
+| Balanced | 23.6 (284 / 12.02 s) | 100% | 0.98 / 2.11 px | 3.24 ms | 235 / 240 |
+| Lite | 20.1 (241 / 12.02 s) | 100% | 1.22 / 2.63 px | 2.22 ms | 240 / 240 |
+
+Both used the real CPU worker and a 512 px public fixture under known translation/roll. They are controlled image benchmarks, not measurements of physical camera latency or real head turns.
+
+## Earlier 1.2.2 release verification (historical baseline)
+
 
 The CPU neural tracker now runs in a worker. Sparse optical flow follows image features between scans; delayed scan results are advanced through buffered frames. A fixed capture clock drives preview rendering and recording independently of compositor refresh. The preview draws the current camera frame, with no frozen analyzed-frame substitution. Single-face live mode is now the default; Live group remains available and photos still detect up to 8 faces.
 
@@ -70,7 +106,7 @@ The lab's motion is translation and roll of a 2D image, not a person turning the
 
 - Tracking is a playful 2D wrap, not a 3D skin simulation. Tiny faces, profiles, covered noses and very poor light can fail; manual photo placement remains available.
 - Up to 8 photo faces and 4 live faces. A group photo counts as one photo for rewards.
-- Output is capped at 2560 px for photos and 1280 for live video (960 in Lite mode). The CPU compatibility preview has lower effective detail. Social formats fit the full source with dark borders.
+- Output is capped at 2560 px for photos and 1280 for live video (960 in Lite mode). Social formats fit the full source with dark borders.
 - MediaRecorder picks a supported codec. H.264/AAC MP4 is preferred when advertised; otherwise WebM is used. Some social apps need external WebM-to-MP4 conversion. WebM seek/duration metadata may remain incomplete until playback finishes.
 - Record with the tab visible. Leaving the tab stops camera/mic and recording. Clips stop at 3 minutes or around 100 MB.
 - Progress belongs to the current browser; clearing site storage or using another device starts a new game. No accounts or cloud sync. There is no anti-cheat server.
