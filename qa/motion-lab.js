@@ -1,8 +1,8 @@
-import {FaceTracker} from '../src/tracker.js?v=1.2.1';
-import {MotionTracker,transform} from '../src/motion.js?v=1.2.1';
-import {landmarkToPatch,patchPose} from '../src/core.js?v=1.2.1';
-import {drawBandage} from '../src/render.js?v=1.2.1';
-import {loadPatchImage} from '../src/designs.js?v=1.2.1';
+import {FaceTracker} from '../src/tracker.js?v=1.2.2';
+import {MotionTracker,transform} from '../src/motion.js?v=1.2.2';
+import {landmarkToPatch,patchPose} from '../src/core.js?v=1.2.2';
+import {drawBandage} from '../src/render.js?v=1.2.2';
+import {loadPatchImage} from '../src/designs.js?v=1.2.2';
 const $=id=>document.getElementById(id);
 $('run').onclick=async()=>{
  $('run').disabled=true;$('results').textContent='Loading local models…';const tracker=new FaceTracker(),motion=new MotionTracker({maxEdge:$('lite').checked?256:320}),c=$('preview'),cx=c.getContext('2d'),source=document.createElement('canvas');source.width=512;source.height=512;const sx=source.getContext('2d',{willReadFrequently:true});
@@ -25,11 +25,11 @@ $('run').onclick=async()=>{
     }
     cx.drawImage(source,0,0);for(const lm of motion.landmarks()){const p=landmarkToPatch(lm,512,512);if(p)drawBandage(cx,patch,patchPose(p,{x:0,y:0,width:512,height:512}));}
     if(!tracker.busy&&now-lastScan>600){lastScan=now;const id=motion.current.id;inflight=tracker.detect(motion.canvas,'VIDEO',1,$('lite').checked?480:720).then(found=>{if(!finished){scans++;motion.seed(found,id);}}).catch(reject);}
-    $('results').textContent=`RUNNING · ${tracker.backend} · ${frames} motion frames · ${scans} neural scans · ${heartbeats} UI heartbeats`;
+    $('results').textContent=`RUNNING · ${document.visibilityState} · ${tracker.backend} · ${frames} motion frames · ${scans} neural scans · ${heartbeats} UI heartbeats`;
     if(t>=12000){finished=true;clearInterval(heartbeat);const sorted=errors.sort((a,b)=>a-b),mean=errors.reduce((a,b)=>a+b,0)/errors.length,p95=sorted[Math.floor(sorted.length*.95)],fps=frames/t*1000,coverage=covered/frames,meanCost=costs.reduce((a,b)=>a+b,0)/costs.length;
-     $('results').textContent=`${coverage>.9&&mean<7&&p95<12&&fps>=12?'PASS':'FAIL'} · ${$('lite').checked?'Lite':'Balanced'} motion benchmark\nBackend: ${tracker.backend}\nMotion updates: ${frames} / ${(t/1000).toFixed(2)} s = ${fps.toFixed(1)} fps\nTracked coverage: ${(coverage*100).toFixed(1)}%\nNeural scans during motion: ${scans}\nNose error vs known transform: mean ${mean.toFixed(2)} px, p95 ${p95.toFixed(2)} px (512 px source)\nMean flow cost: ${meanCost.toFixed(2)} ms\nUI heartbeat: ${heartbeats} / expected ${Math.floor(t/50)}\nNOT VERIFIED: real Android hardware, actual head yaw or physical camera.\nFINISHED`;resolve();
-    }else requestAnimationFrame(tick);
-   }catch(e){clearInterval(heartbeat);reject(e);}};requestAnimationFrame(tick);
+     $('results').textContent=`${coverage>.9&&mean<7&&p95<12&&fps>=12?'PASS':'FAIL'} · ${$('lite').checked?'Lite':'Balanced'} motion benchmark\nBackend: ${tracker.backend}\nCapture clock: 30 Hz timer (not display refresh rate); page ${document.visibilityState}\nMotion updates: ${frames} / ${(t/1000).toFixed(2)} s = ${fps.toFixed(1)} fps\nTracked coverage: ${(coverage*100).toFixed(1)}%\nNeural scans during motion: ${scans}\nNose error vs known transform: mean ${mean.toFixed(2)} px, p95 ${p95.toFixed(2)} px (512 px source)\nMean flow cost: ${meanCost.toFixed(2)} ms\nUI heartbeat: ${heartbeats} / expected ${Math.floor(t/50)}\nNOT VERIFIED: real Android hardware, actual head yaw or physical camera.\nFINISHED`;resolve();
+    }else setTimeout(()=>tick(performance.now()),1000/30);
+   }catch(e){clearInterval(heartbeat);reject(e);}};setTimeout(()=>tick(performance.now()),1000/30);
   });
   await inflight;
  }catch(e){finished=true;$('results').textContent='FAIL · '+e.stack;console.error(e);}finally{tracker.dispose();$('run').disabled=false;}

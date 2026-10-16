@@ -1,9 +1,9 @@
-import {progressAt,unlockPhoto,cleanCount} from './progress.js?v=1.2.1';
-import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.2.1';
-import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,recordingMime,formatTime,cameraError} from './core.js?v=1.2.1';
-import {drawBandage} from './render.js?v=1.2.1';
-import {FaceTracker} from './tracker.js?v=1.2.1';
-import {MotionTracker} from './motion.js?v=1.2.1';
+import {progressAt,unlockPhoto,cleanCount} from './progress.js?v=1.2.2';
+import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.2.2';
+import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,recordingMime,formatTime,cameraError} from './core.js?v=1.2.2';
+import {drawBandage} from './render.js?v=1.2.2';
+import {FaceTracker} from './tracker.js?v=1.2.2';
+import {MotionTracker} from './motion.js?v=1.2.2';
 const $=id=>document.getElementById(id);
 const stage=$('stage'),ctx=stage.getContext('2d',{alpha:false}),video=$('sourceVideo');
 const tracker=new FaceTracker(),motion=new MotionTracker(),images=new Map();
@@ -138,7 +138,7 @@ async function enableMic(){
 function frozenSource(){if(video.readyState<2||!video.videoWidth)return null;const c=document.createElement('canvas');const s=Math.min(1,2560/Math.max(video.videoWidth,video.videoHeight));c.width=Math.round(video.videoWidth*s);c.height=Math.round(video.videoHeight*s);c.getContext('2d').drawImage(video,0,0,c.width,c.height);return c;}
 function stopLive(preserve=true){
   if(recording)stopRecording();if(live&&preserve){photo=frozenSource()||photo;progressEligible=false;photoCredited=false;}
-  live=false;motion.reset();motionReady=false;epoch++;cancelAnimationFrame(testRaf);testRaf=0;cancelAnimationFrame(raf);raf=0;stream?.getTracks().forEach(t=>t.stop());stream=null;stopMic();video.srcObject=null;
+  live=false;motion.reset();motionReady=false;epoch++;clearTimeout(testRaf);testRaf=0;clearTimeout(raf);raf=0;stream?.getTracks().forEach(t=>t.stop());stream=null;stopMic();video.srcObject=null;
   if(photo){showMedia();resize();rebuildNoses();render();faceStatus('Camera off · media stays on your device');}else{stage.hidden=true;$('welcome').hidden=false;$('viewfinder').classList.remove('has-media');$('faceStatus').hidden=true;}
   updateControls();
 }
@@ -146,7 +146,7 @@ async function testCameraStream(){
   const image=new Image();image.src='assets/demo-astronaut.png';await image.decode();
   const c=document.createElement('canvas');c.width=720;c.height=960;const cx=c.getContext('2d');
   const start=performance.now();
-  const tick=now=>{cx.fillStyle='#292638';cx.fillRect(0,0,720,960);cx.save();cx.translate(360+Math.sin((now-start)/1300)*35,475);cx.rotate(Math.sin((now-start)/950)*.10);cx.drawImage(image,-335,-335,670,670);cx.restore();testRaf=requestAnimationFrame(tick);};
+  const tick=now=>{cx.fillStyle='#292638';cx.fillRect(0,0,720,960);cx.save();cx.translate(360+Math.sin((now-start)/1300)*35,475);cx.rotate(Math.sin((now-start)/950)*.10);cx.drawImage(image,-335,-335,670,670);cx.restore();testRaf=setTimeout(()=>tick(performance.now()),1000/30);};
   tick(start);return c.captureStream(30);
 }
 async function testMicrophone(){
@@ -178,7 +178,7 @@ function updateLivePatches(landmarks,time){
   faceStatus(patches.length?`${patches.length} ${patches.length===1?'nose':'noses'} locked · ${DESIGNS.find(d=>d.id===design).name}`:'No face found · face the camera',!patches.length);
 }
 function loop(time){
-  if(!live)return;raf=requestAnimationFrame(loop);
+  if(!live)return;raf=setTimeout(()=>loop(performance.now()),1000/30);
   const flowInterval=1000/($('quality').value==='lite'?20:30);
   if(motionReady&&time-lastMotion>=flowInterval&&motion.tick(video,time)){
     lastMotion=time;updateLivePatches(motion.landmarks(),time);if(motion.hasFaces)flowCount++;
@@ -281,4 +281,4 @@ try{const p=JSON.parse(localStorage.getItem('manlyfy-prefs')||'{}');if(DESIGNS.s
 if(!canUse(design))design='classic';
 if(testCamera){const n=document.createElement('p');n.className='notice';n.textContent='VERIFICATION MODE · Simulated camera and audio only. Open the normal app URL for your real camera.';document.querySelector('main').prepend(n);}
 buildCollection();ensureDesign(design).then(()=>selectDesign(design,false));updateControls();
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.2.1',{updateViaCache:'none'}).catch(()=>{}));
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.2.2',{updateViaCache:'none'}).catch(()=>{}));
