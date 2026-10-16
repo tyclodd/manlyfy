@@ -1,11 +1,12 @@
-import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.0.6';
-import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,recordingMime,formatTime,cameraError} from './core.js?v=1.0.6';
-import {FaceTracker} from './tracker.js?v=1.0.6';
+import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.0.7';
+import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,recordingMime,formatTime,cameraError} from './core.js?v=1.0.7';
+import {drawBandage} from './render.js?v=1.0.7';
+import {FaceTracker} from './tracker.js?v=1.0.7';
 const $=id=>document.getElementById(id);
 const stage=$('stage'),ctx=stage.getContext('2d',{alpha:false}),video=$('sourceVideo');
 const tracker=new FaceTracker(),images=new Map();
 let design='classic',category='All patches',mode='photo',photo=null,live=false,stream=null,micStream=null,mirrored=false,facing='user';
-let patches=[],selected=null,compare=false,epoch=0,lastInfer=0,lastTracked=0,lastDraw=0,raf=0,working=false;
+let patches=[],selected=null,compare=false,epoch=0,lastInfer=0,lastTracked=0,trackingHold=650,lastDraw=0,raf=0,working=false;
 let recorder=null,recordStream=null,recording=false,chunks=[],recordBytes=0,recordStarted=0,resultBlob=null,resultUrl=null,photoUrl=null;
 const testCamera=new URLSearchParams(location.search).get('test-camera')==='1';
 let testRaf=0,testAudio=null,micPending=false,micRequest=0,testMetricsAt=0,testFrames=0;
@@ -23,13 +24,8 @@ function render(){
   const r=containRect(sw,sh,stage.width,stage.height);ctx.fillStyle='#15151e';ctx.fillRect(0,0,stage.width,stage.height);
   ctx.save();if(mirrored){ctx.translate(r.x*2+r.width,0);ctx.scale(-1,1);}ctx.drawImage(source,r.x,r.y,r.width,r.height);ctx.restore();
   if(compare&&!recording)return;
-  if(live&&now-lastTracked>650)return;
-  for(const p of patches){const img=images.get(p.design||design);if(!img)continue;const q=patchPose(p,r,mirrored);ctx.save();ctx.translate(q.x,q.y);ctx.rotate(q.angle);ctx.globalAlpha=.97;
-    // Draw a subtle curved strip. The nose centre is slightly raised relative to the ends.
-    const h=q.width*100/320,slices=16;
-    for(let i=0;i<slices;i++){const t=(i+.5)/slices,curve=Math.cos((t-.5)*Math.PI)*h*.055;ctx.drawImage(img,i*img.width/slices,0,img.width/slices,img.height,-q.width/2+i*q.width/slices,-h/2-curve,q.width/slices+.5,h);}
-    ctx.restore();
-  }
+  if(live&&now-lastTracked>trackingHold)return;
+  for(const p of patches){const img=images.get(p.design||design);if(img)drawBandage(ctx,img,patchPose(p, r,mirrored));}
 }
 function showMedia(){stage.hidden=false;$('welcome').hidden=true;$('viewfinder').classList.add('has-media');$('faceStatus').hidden=false;}
 function faceStatus(text,lost=false){if($('faceStatusText').textContent!==text)$('faceStatusText').textContent=text;$('faceStatus').classList.toggle('lost',lost);}
@@ -138,14 +134,14 @@ function loop(time){
   if(!live)return;raf=requestAnimationFrame(loop);
   if(time-lastDraw>1000/30){render(time);lastDraw=time;}
   const interval=$('quality').value==='lite'?140:80;
-  if(tracker.ready&&!tracker.busy&&time-lastInfer>interval&&video.readyState>=2){lastInfer=time;const token=epoch;
+  if(tracker.ready&&!tracker.busy&&time-lastInfer>interval&&video.readyState>=2){lastInfer=time;const token=epoch,inferStarted=performance.now();
     tracker.detect(video,'VIDEO',$('groupToggle').checked?4:1,$('quality').value==='lite'?480:720).then(found=>{
       if(!live||token!==epoch||found===null)return;testFrames++;const raw=found.map(lm=>landmarkToPatch(lm,video.videoWidth,video.videoHeight)).filter(Boolean);
-      patches=smoothPatches(patches,raw,performance.now()).map(p=>({...p,design}));lastTracked=performance.now();
+      patches=smoothPatches(patches,raw,performance.now()).map(p=>({...p,design}));const completed=performance.now();trackingHold=clamp(Math.max(completed-inferStarted,lastTracked?completed-lastTracked:0)*2,650,2500);lastTracked=completed;render();
       faceStatus(patches.length?`${patches.length} ${patches.length===1?'nose':'noses'} locked · ${DESIGNS.find(d=>d.id===design).name}`:'No face found · face the camera',!patches.length);
     }).catch(e=>{if(token!==epoch)return;patches=[];faceStatus('Tracking paused · try a photo or Lite mode',true);notice('Tracking paused. Turn the camera off and reopen it, or use a photo.');tracker.dispose();updateControls();});
   }
-  if(testCamera&&time-testMetricsAt>500){testMetricsAt=time;$('notice').textContent=`TEST CAMERA · ${tracker.backend} · ${patches.length} patches · ${testFrames} results · result age ${Math.round(performance.now()-lastTracked)} ms · frame age ${Math.round(time-lastTracked)} ms · busy ${tracker.busy} · artwork ${images.has(design)}`;}
+  if(testCamera&&time-testMetricsAt>500){testMetricsAt=time;$('notice').textContent=`TEST CAMERA · ${tracker.backend} · ${patches.length} patches · ${testFrames} results · result age ${Math.round(performance.now()-lastTracked)} ms · hold ${Math.round(trackingHold)} ms · busy ${tracker.busy} · artwork ${images.has(design)}`;}
   if(recording){const elapsed=performance.now()-recordStarted;$('timer').textContent=formatTime(elapsed);if(elapsed>=180000){toast('Three glorious minutes. Saving your clip.');stopRecording();}}
 }
 async function takePhoto(){
@@ -217,4 +213,4 @@ window.addEventListener('pagehide',()=>{stopLive(false);tracker.dispose();});
 try{const p=JSON.parse(localStorage.getItem('manlyfy-prefs')||'{}');if(DESIGNS.some(d=>d.id===p.design))design=p.design;if(['original','square','vertical'].includes(p.ratio))$('ratio').value=p.ratio;if(['lite','balanced'].includes(p.quality))$('quality').value=p.quality;if(typeof p.group==='boolean')$('groupToggle').checked=p.group;}catch{}
 if(testCamera){const n=document.createElement('p');n.className='notice';n.textContent='VERIFICATION MODE · Simulated camera and audio only. Open the normal app URL for your real camera.';document.querySelector('main').prepend(n);}
 buildCollection();ensureDesign(design).then(()=>selectDesign(design,false));updateControls();
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.0.6',{updateViaCache:'none'}).catch(()=>{}));
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.0.7',{updateViaCache:'none'}).catch(()=>{}));

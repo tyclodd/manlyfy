@@ -1,11 +1,12 @@
-import {FaceTracker} from '../src/tracker.js?v=1.0.6';
-import {DESIGNS,loadPatchImage} from '../src/designs.js?v=1.0.6';
-import {landmarkToPatch,containRect,patchPose,recordingMime} from '../src/core.js?v=1.0.6';
+import {drawBandage} from '../src/render.js?v=1.0.7';
+import {FaceTracker} from '../src/tracker.js?v=1.0.7';
+import {DESIGNS,loadPatchImage} from '../src/designs.js?v=1.0.7';
+import {landmarkToPatch,containRect,patchPose,recordingMime} from '../src/core.js?v=1.0.7';
 const $=id=>document.getElementById(id),tracker=new FaceTracker();let blob,ac;
 const report=(text,pass=true)=>{$('results').textContent+=`\n${pass?'PASS':'FAIL'} · ${text}`;};
 async function load(url){const i=new Image();i.src=url;await i.decode();return i;}
 function canvas(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return c;}
-function render(source,c,patches,img){const ctx=c.getContext('2d'),r=containRect(source.width,source.height,c.width,c.height);ctx.fillStyle='#15151e';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(source,r.x,r.y,r.width,r.height);for(const p of patches){const q=patchPose(p,r);ctx.save();ctx.translate(q.x,q.y);ctx.rotate(q.angle);ctx.drawImage(img,-q.width/2,-q.width*100/640,q.width,q.width*100/320);ctx.restore();}}
+function render(source,c,patches,img){const ctx=c.getContext('2d'),r=containRect(source.width,source.height,c.width,c.height);ctx.fillStyle='#15151e';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(source,r.x,r.y,r.width,r.height);for(const p of patches){const q=patchPose(p,r);drawBandage(ctx,img,q);}}
 function sample(name,c){const div=document.createElement('div');div.className='sample';const title=document.createElement('p');title.textContent=name;div.append(title,c);$('samples').append(div);}
 $('run').onclick=async()=>{
  ac=new AudioContext();await ac.resume();$('run').disabled=true;$('results').textContent='Running local face models and browser codec checks…';$('samples').replaceChildren();

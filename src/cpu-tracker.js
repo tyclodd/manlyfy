@@ -29,7 +29,7 @@ export class CpuFaceTracker {
     this.canvas.width=Math.max(1,Math.round(sw*s));this.canvas.height=Math.max(1,Math.round(sh*s));this.context.drawImage(source,0,0,this.canvas.width,this.canvas.height);
     const signature=this.canvas.width+'x'+this.canvas.height+':'+count;
     if(mode==='VIDEO'&&this.videoSignature===signature&&this.boxes?.length&&performance.now()-this.lastFullAt<1800&&this.followFrames<10)return this.followVideo(count);
-    const options=new this.api.TinyFaceDetectorOptions({inputSize:mode==='VIDEO'?224:416,scoreThreshold:.30});
+    const options=new this.api.TinyFaceDetectorOptions({inputSize:mode==='VIDEO'?320:416,scoreThreshold:.45});
     const orientations=mode==='VIDEO'?[0]:[0,90,270,180];
     for(const rotation of orientations){
       let c=this.canvas;
