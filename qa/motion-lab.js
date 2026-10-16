@@ -1,8 +1,8 @@
-import {FaceTracker} from '../src/tracker.js?v=1.2.0';
-import {MotionTracker,transform} from '../src/motion.js?v=1.2.0';
-import {landmarkToPatch,patchPose} from '../src/core.js?v=1.2.0';
-import {drawBandage} from '../src/render.js?v=1.2.0';
-import {loadPatchImage} from '../src/designs.js?v=1.2.0';
+import {FaceTracker} from '../src/tracker.js?v=1.2.1';
+import {MotionTracker,transform} from '../src/motion.js?v=1.2.1';
+import {landmarkToPatch,patchPose} from '../src/core.js?v=1.2.1';
+import {drawBandage} from '../src/render.js?v=1.2.1';
+import {loadPatchImage} from '../src/designs.js?v=1.2.1';
 const $=id=>document.getElementById(id);
 $('run').onclick=async()=>{
  $('run').disabled=true;$('results').textContent='Loading local models…';const tracker=new FaceTracker(),motion=new MotionTracker({maxEdge:$('lite').checked?256:320}),c=$('preview'),cx=c.getContext('2d'),source=document.createElement('canvas');source.width=512;source.height=512;const sx=source.getContext('2d',{willReadFrequently:true});
@@ -15,9 +15,7 @@ $('run').onclick=async()=>{
   const n=initial[0][5],base={x:(n.x*512-256)/.94+256,y:(n.y*512-256)/.94+256};
   const start=performance.now(),errors=[],costs=[];let lastFlow=0,lastScan=-1000,frames=0,covered=0,scans=0,inflight=null,heartbeats=0;
   const heartbeat=setInterval(()=>heartbeats++,50);
-  const capture=now=>{
-    const width=motion.canvas.width=$('lite').checked?256:320,height=motion.canvas.height=width;motion.ctx.drawImage(source,0,0,width,height);const rgba=motion.ctx.getImageData(0,0,width,height).data,gray=new Uint8Array(width*height);motion.lib.imgproc.grayscale(rgba,width,height,gray);motion.push(gray,width,height,now);
-  };
+  const capture=now=>motion.capture(source,now);
   capture(start);motion.seed(initial,motion.current.id);
   await new Promise((resolve,reject)=>{
    const tick=now=>{if(finished)return;try{

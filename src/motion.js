@@ -20,10 +20,16 @@ export class MotionTracker{
   get hasFaces(){return this.faces.length>0;}
   tick(source,time){
     if(!this.lib||!this.ctx||source.readyState<2||source.currentTime===this.lastVideoTime)return false;
-    this.lastVideoTime=source.currentTime;const w=source.videoWidth,h=source.videoHeight,s=Math.min(1,this.maxEdge/Math.max(w,h)),cw=Math.round(w*s),ch=Math.round(h*s);
-    if(this.canvas.width!==cw||this.canvas.height!==ch){this.canvas.width=cw;this.canvas.height=ch;this.history=[];this.faces=[];}
-    this.ctx.drawImage(source,0,0,cw,ch);const rgba=this.ctx.getImageData(0,0,cw,ch).data,gray=new Uint8Array(cw*ch);this.lib.imgproc.grayscale(rgba,cw,ch,gray);this.push(gray,cw,ch,time);return true;
+    this.lastVideoTime=source.currentTime;this.capture(source,time);return true;
   }
+  capture(source,time){
+    const w=source.videoWidth||source.width,h=source.videoHeight||source.height,s=Math.min(1,this.maxEdge/Math.max(w,h)),cw=Math.round(w*s),ch=Math.round(h*s);
+    if(this.canvas.width!==cw||this.canvas.height!==ch){this.canvas.width=cw;this.canvas.height=ch;this.history=[];this.faces=[];}
+    this.ctx.drawImage(source,0,0,cw,ch);const rgba=this.ctx.getImageData(0,0,cw,ch).data;
+    this.gray ||= new this.lib.matrix_t(cw,ch,this.lib.U8_t|this.lib.C1_t);
+    this.lib.imgproc.grayscale(rgba,cw,ch,this.gray);return this.push(this.gray.data,cw,ch,time);
+  }
+
   push(gray,width,height,time){
     const started=performance.now(),lib=this.lib,pyramid=new lib.pyramid_t(3);pyramid.allocate(width,height,lib.U8_t|lib.C1_t);pyramid.data[0].data.set(gray);pyramid.build(pyramid.data[0],true);
     const frame={id:++this.serial,time,width,height,pyramid};
