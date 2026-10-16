@@ -1,10 +1,11 @@
-import {CpuFaceTracker} from './cpu-tracker.js?v=1.2.2';
+import {CpuFaceTracker} from './cpu-tracker.js?v=1.3.0';
 // One in-flight scan. Both neural backends prefer a worker, leaving UI and motion free.
 export class FaceTracker {
-  constructor({forceMain=false}={}) {this.worker=null;this.workerKind=null;this.pending=new Map();this.serial=0;this.busy=false;this.ready=false;this.initPromise=null;this.mainModel=null;this.cpuModel=null;this.mainMode='IMAGE';this.mainCount=1;this.forceMain=forceMain;this.backend='not started';}
+  constructor({forceMain=false,forceCpu=false}={}) {this.worker=null;this.workerKind=null;this.pending=new Map();this.serial=0;this.busy=false;this.ready=false;this.initPromise=null;this.mainModel=null;this.cpuModel=null;this.mainMode='IMAGE';this.mainCount=1;this.forceMain=forceMain;this.forceCpu=forceCpu;this.backend='not started';this.idlePromise=null;this.resolveIdle=null;}
   init() {
     if(this.initPromise)return this.initPromise;
     this.initPromise=(async()=>{
+      if(this.forceCpu){await this.startCpu();return;}
       const probe=document.createElement('canvas');if(!probe.getContext('webgl2')){await this.startCpu();return;}
       if(this.forceMain){await this.startMain();return;}
       this.makeWorker('face-worker.js','GPU');
@@ -14,7 +15,7 @@ export class FaceTracker {
   }
   makeWorker(file,kind){
     this.worker?.terminate();this.workerKind=kind;
-    this.worker=new Worker(new URL('./'+file+'?v=1.2.2',import.meta.url));
+    this.worker=new Worker(new URL('./'+file+'?v=1.3.0',import.meta.url));
     this.worker.onmessage=({data})=>{const p=this.pending.get(data.id);if(!p)return;clearTimeout(p.timer);this.pending.delete(data.id);data.error?p.reject(new Error(data.error)):p.resolve(data.landmarks||[]);};
     this.worker.onerror=e=>this.fail(new Error(e.message||'The worker tracker could not load.'));
   }
@@ -38,24 +39,25 @@ export class FaceTracker {
     }
     this.cpuModel=new CpuFaceTracker();await this.cpuModel.init();this.backend='CPU compatibility';this.ready=true;
   }
-  async detect(source,runningMode='IMAGE',numFaces=1,maxEdge=960) {
-    await this.init();if(this.busy)return null;this.busy=true;
+  async detect(source,runningMode='IMAGE',numFaces=1,maxEdge=960,options={}) {
+    await this.init();if(this.busy)return null;this.busy=true;this.idlePromise=new Promise(resolve=>this.resolveIdle=resolve);
     let bitmap;
     try{
-      if(this.cpuModel)return await this.cpuModel.detect(source,runningMode,numFaces,maxEdge);
+      if(this.cpuModel)return await this.cpuModel.detect(source,runningMode,numFaces,maxEdge,options);
       const sw=source.videoWidth||source.naturalWidth||source.width,sh=source.videoHeight||source.naturalHeight||source.height,s=Math.min(1,maxEdge/Math.max(sw,sh));
       const snapshot=()=>createImageBitmap(source,{resizeWidth:Math.max(1,Math.round(sw*s)),resizeHeight:Math.max(1,Math.round(sh*s)),resizeQuality:'low'});
       bitmap=await snapshot();
       if(this.worker){
-        try{return await this.send({bitmap,runningMode,numFaces,maxEdge,time:performance.now()},[bitmap]);}
-        catch(e){const kind=this.workerKind;console.warn(kind+' worker detection unavailable; switching compatibility path.',e.message);if(kind==='CPU')await this.startCpu(false);else await this.startMain();if(this.worker){bitmap=await snapshot();return await this.send({bitmap,runningMode,numFaces,maxEdge,time:performance.now()},[bitmap]);}bitmap=await snapshot();}
+        try{return await this.send({bitmap,runningMode,numFaces,maxEdge,options,time:performance.now()},[bitmap]);}
+        catch(e){const kind=this.workerKind;console.warn(kind+' worker detection unavailable; switching compatibility path.',e.message);if(kind==='CPU')await this.startCpu(false);else await this.startMain();if(this.worker){bitmap=await snapshot();return await this.send({bitmap,runningMode,numFaces,maxEdge,options,time:performance.now()},[bitmap]);}bitmap=await snapshot();}
       }
-      if(this.cpuModel)return await this.cpuModel.detect(source,runningMode,numFaces,maxEdge);
-      if(this.mainMode!==runningMode||this.mainCount!==numFaces){await this.mainModel.setOptions({runningMode,numFaces});this.mainMode=runningMode;this.mainCount=numFaces;}
+      if(this.cpuModel)return await this.cpuModel.detect(source,runningMode,numFaces,maxEdge,options);
+      if(this.mainMode!==runningMode||this.mainCount!==numFaces){await this.mainModel.setOptions({runningMode,numFaces,minFaceDetectionConfidence:runningMode==='IMAGE'?.35:.45,minFacePresenceConfidence:runningMode==='IMAGE'?.35:.45});this.mainMode=runningMode;this.mainCount=numFaces;}
       try{const result=runningMode==='VIDEO'?this.mainModel.detectForVideo(bitmap,performance.now()):this.mainModel.detect(bitmap);return result.faceLandmarks;}
-      catch(e){console.warn('MediaPipe detection unavailable; using local CPU compatibility.',e.message);await this.startCpu();if(this.worker){bitmap=await snapshot();return await this.send({bitmap,runningMode,numFaces,maxEdge,time:performance.now()},[bitmap]);}return await this.cpuModel.detect(source,runningMode,numFaces,maxEdge);}
-    }finally{bitmap?.close();this.busy=false;}
+      catch(e){console.warn('MediaPipe detection unavailable; using local CPU compatibility.',e.message);await this.startCpu();if(this.worker){bitmap=await snapshot();return await this.send({bitmap,runningMode,numFaces,maxEdge,options,time:performance.now()},[bitmap]);}return await this.cpuModel.detect(source,runningMode,numFaces,maxEdge,options);}
+    }finally{bitmap?.close();this.busy=false;this.resolveIdle?.();this.resolveIdle=null;this.idlePromise=null;}
   }
+  whenIdle(){return this.idlePromise||Promise.resolve();}
   resetVideo(){if(this.cpuModel){this.cpuModel.boxes=[];this.cpuModel.videoSignature=null;}}
   fail(e){for(const p of this.pending.values()){clearTimeout(p.timer);p.reject(e);}this.pending.clear();}
   dispose(){this.fail(new Error('Tracker stopped.'));this.worker?.terminate();this.worker=null;this.workerKind=null;try{this.mainModel?.close();}catch{}this.mainModel=null;this.cpuModel?.dispose();this.cpuModel=null;this.initPromise=null;this.ready=false;this.busy=false;this.backend='stopped';}

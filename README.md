@@ -4,14 +4,14 @@
 
 App: https://tyclodd.github.io/manlyfy/
 
-[Release screenshot](docs/screenshots/manlyfy-v1.2.2.jpg) · [Verification record](docs/TESTING.md) · [Name research](docs/NAME-RESEARCH.md)
+[Release screenshot](docs/screenshots/manlyfy-v1.2.2.jpg) · [Verification record](docs/TESTING.md) · [Name research](docs/NAME-RESEARCH.md) · [Full request audit](docs/REQUIREMENTS-AUDIT.md)
 
 ## Features implemented
 
-- Photo upload, camera capture, local MediaPipe nose detection and group photos (up to 8 faces).
-- Drag, resize, rotate, add and remove individual plasters; before/after comparison.
+- Local photo upload (up to 10 selected photos), camera capture, higher-resolution/crop scans for smaller faces, and group photos (up to 8 faces). Navigation retains per-photo edits without decoding the entire batch into memory.
+- Drag, pinch to resize, twist to rotate, add and remove individual plasters; before/after comparison. One-tap Save photo sits beside the preview, with no reward modal interrupting the download.
 - 75 designs: three plain starters and 72 original illustrated rewards, categorized and swipeable on mobile. Photo milestones unlock Playful, Deluxe and Legendary artwork; all rewards are free.
-- Band-Aid Roulette, group outfit mixing, intentionally fictional manliness ratings.
+- Band-Aid Roulette, group outfit mixing, repeatable fictional manliness ratings and a separate before/after scoring section. Over 331,000 punchlines can be combined per percent; another joke never changes the score.
 - Live front/rear camera selection, nose tracking, filtered canvas video recording with optional microphone audio. A horizontal patch carousel above the camera works before requesting camera permission.
 - PNG photos without watermarks; WebM or MP4 video according to browser codecs; native file sharing where supported, download fallback elsewhere.
 - Original, 1:1 square, and 9:16 vertical outputs. The complete image is fitted into the output; dark borders preserve faces.
@@ -39,6 +39,10 @@ Third-party runtime assets are pinned to `@mediapipe/tasks-vision` **0.10.32** a
 - `src/progress.js`: local photo-count progression, reward packs and unlock thresholds.
 - `src/render.js`: curved, yaw-aware artwork wrapping over the nose bridge.
 - `src/core.js`: geometry, smoothing, output fitting, codec selection and permission errors.
+- `src/camera-clock.js`: reacts to decoded video frames, with a timer fallback and duplicate-frame suppression.
+- `src/photo-tracker.js`, `src/photos.js`: small-face crop scans, CPU fallback, MIME sniffing and bounded batch selection.
+- `src/gestures.js`: pinch/twist/drag geometry with mirrored-source mapping.
+- `src/manliness.js`: deterministic image fingerprints, device-local similar-shot grouping, plaster bonuses and procedural jokes. No identity, gender, attractiveness or personality model is used.
 - `src/designs.js`: original vector artwork, all 75 designs.
 - `qa/`: browser verification lab and known-transform motion benchmark; synthetic media tests, responsive iframe and an explicitly labeled `?test-camera=1` app route. The test route feeds an animated public-domain image and optional synthetic audio through the actual camera/recording UI. Not indexed; no real camera or mic is used by the lab.
 - `sw.js`: app shell and same-origin asset caching. Increment `VERSION` whenever changing shipped assets.
@@ -63,6 +67,10 @@ See [the launch name screen](docs/NAME-RESEARCH.md). MANLYFY is a provisional la
 
 MANLYFY code and original SVG artwork: MIT, see LICENSE. MediaPipe and its model: Google, Apache 2.0; see assets/MEDIAPIPE-LICENSE.txt and [upstream](https://github.com/google-ai-edge/mediapipe). Runtime assets are downloaded unchanged (except the CJS filename). The optional CPU fallback uses face-api.js 0.22.2 (MIT), with its tiny face detector and tiny 68-landmark models, self-hosted in assets/. Only face geometry is used; identity, recognition, demographic and expression models are never loaded. See assets/FACE-API-LICENSE.txt. Sparse optical flow uses self-hosted jsfeat 0.0.8 (MIT, Eugene Zatepyakin); see assets/JSFEAT-LICENSE.txt. The CDN version and license commit are pinned in scripts/vendor.py.
 
-Demo photo: NASA astronaut Eileen Collins, public-domain US government photograph, distributed with scikit-image. QA portrait and rotated copy: official White House portrait of Barack Obama by Pete Souza, public-domain US government photograph, from MediaPipe's public test assets. They are only test fixtures, not endorsements.
+Demo photo: NASA astronaut Eileen Collins, public-domain US government photograph, distributed with scikit-image. Additional glasses fixture: US Navy portrait of Grace Hopper distributed by TensorFlow example_images. QA portrait and rotated copy: official White House portrait of Barack Obama by Pete Souza, public-domain US government photograph, from MediaPipe's public test assets. They are only test fixtures, not endorsements.
 
 BAND-AID is a third-party trademark; this project is unaffiliated and all decorative filter artwork is original.
+
+## Reusable filter preparation
+
+[integrations/README.md](integrations/README.md) documents the reusable asset kit and current Instagram publication limits. `npm run filter-kit` builds the ZIP from original SVG art and source modules, using optional sharp for PNG rendering. No private face image is in the kit.

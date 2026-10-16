@@ -27,3 +27,9 @@ test('occlusion, long frame gaps and empty detections drop the overlay',()=>{
  if(missing==='empty')tracker.seed([],1);
  assert.equal(tracker.landmarks().length,0,missing);}
 });
+test('switching live modes rejects a neural result from the previous motion history',()=>{
+ const tracker=new MotionTracker({library});const old=tracker.push(image(),width,height,0);tracker.seed([points()],old.id);
+ tracker.reset();const next=tracker.push(image(),width,height,34);assert.notEqual(old.id,next.id);
+ assert.equal(tracker.seed([points()],old.id),false);assert.equal(tracker.landmarks().length,0);
+ assert.equal(tracker.seed([points()],next.id),true);assert.equal(tracker.landmarks().length,1);
+});

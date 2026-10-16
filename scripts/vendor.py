@@ -3,6 +3,7 @@ root=pathlib.Path(__file__).resolve().parents[1]
 urls={
 'assets/jsfeat.min.js':'https://cdn.jsdelivr.net/npm/jsfeat@0.0.8/build/jsfeat-min.js',
 'assets/JSFEAT-LICENSE.txt':'https://raw.githubusercontent.com/inspirit/jsfeat/59cc92848281ac75965d7c4f3f5e673467dd4d6e/LICENSE',
+'assets/qa-grace-hopper.jpg':'https://storage.googleapis.com/download.tensorflow.org/example_images/grace_hopper.jpg',
 'assets/demo-astronaut.png':'https://raw.githubusercontent.com/scikit-image/scikit-image/v0.21.0/skimage/data/astronaut.png',
 'assets/qa-portrait.jpg':'https://storage.googleapis.com/mediapipe-assets/portrait.jpg',
 'assets/qa-portrait-rotated.jpg':'https://storage.googleapis.com/mediapipe-assets/portrait_rotated.jpg',

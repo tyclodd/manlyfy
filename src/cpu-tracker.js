@@ -32,14 +32,14 @@ export class CpuFaceTracker {
     }
     this.boxes=nextBoxes;this.followFrames++;return output;
   }
-  async detect(source,mode,count,maxEdge){
+  async detect(source,mode,count,maxEdge,settings={}){
     const sw=source.videoWidth||source.naturalWidth||source.width,sh=source.videoHeight||source.naturalHeight||source.height;
     const edge=mode==='VIDEO'?Math.min(maxEdge,480):Math.min(maxEdge,960),s=Math.min(1,edge/Math.max(sw,sh));
     this.canvas.width=Math.max(1,Math.round(sw*s));this.canvas.height=Math.max(1,Math.round(sh*s));this.context.drawImage(source,0,0,this.canvas.width,this.canvas.height);
     const signature=this.canvas.width+'x'+this.canvas.height+':'+count;
     if(this.allowFollow&&mode==='VIDEO'&&this.videoSignature===signature&&this.boxes?.length&&performance.now()-this.lastFullAt<1800&&this.followFrames<10)return this.followVideo(count);
-    const options=new this.api.TinyFaceDetectorOptions({inputSize:mode==='VIDEO'?(maxEdge<=480?224:320):416,scoreThreshold:.45});
-    const orientations=mode==='VIDEO'?[0]:[0,90,270,180];
+    const options=new this.api.TinyFaceDetectorOptions({inputSize:mode==='VIDEO'?(maxEdge<=480?224:320):(settings.inputSize||416),scoreThreshold:mode==='VIDEO'?.45:(settings.scoreThreshold||.35)});
+    const orientations=mode==='VIDEO'||settings.rotationSearch===false?[0]:[0,90,270,180];
     for(const rotation of orientations){
       let c=this.canvas;
       if(rotation){c=makeCanvas();const side=rotation===90||rotation===270;c.width=side?this.canvas.height:this.canvas.width;c.height=side?this.canvas.width:this.canvas.height;const cx=c.getContext('2d');cx.translate(c.width/2,c.height/2);cx.rotate(rotation*Math.PI/180);cx.drawImage(this.canvas,-this.canvas.width/2,-this.canvas.height/2);}

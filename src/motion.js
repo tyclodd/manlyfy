@@ -14,9 +14,9 @@ export function similarity(from,to){
 }
 export const transform=(p,m)=>({x:m.a*p.x-m.b*p.y+m.x,y:m.b*p.x+m.a*p.y+m.y});
 export class MotionTracker{
-  constructor({library=null,maxEdge=320}={}){this.lib=library;this.maxEdge=maxEdge;this.reset();}
+  constructor({library=null,maxEdge=320}={}){this.lib=library;this.maxEdge=maxEdge;this.serial=0;this.reset();}
   async init(){this.lib ||= await engine();this.canvas=document.createElement('canvas');this.ctx=this.canvas.getContext('2d',{willReadFrequently:true});}
-  reset(){this.history=[];this.faces=[];this.serial=0;this.lastVideoTime=-1;this.updates=0;this.cost=0;this.current=null;}
+  reset(){this.history=[];this.faces=[];this.lastVideoTime=-1;this.updates=0;this.cost=0;this.current=null;}
   get hasFaces(){return this.faces.length>0;}
   tick(source,time){
     if(!this.lib||!this.ctx||source.readyState<2||source.currentTime===this.lastVideoTime)return false;
