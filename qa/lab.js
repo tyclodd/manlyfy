@@ -1,7 +1,7 @@
-import {drawBandage} from '../src/render.js?v=1.0.7';
-import {FaceTracker} from '../src/tracker.js?v=1.0.7';
-import {DESIGNS,loadPatchImage} from '../src/designs.js?v=1.0.7';
-import {landmarkToPatch,containRect,patchPose,recordingMime} from '../src/core.js?v=1.0.7';
+import {drawBandage} from '../src/render.js?v=1.1.0';
+import {FaceTracker} from '../src/tracker.js?v=1.1.0';
+import {DESIGNS,loadPatchImage} from '../src/designs.js?v=1.1.0';
+import {landmarkToPatch,containRect,patchPose,recordingMime} from '../src/core.js?v=1.1.0';
 const $=id=>document.getElementById(id),tracker=new FaceTracker();let blob,ac;
 const report=(text,pass=true)=>{$('results').textContent+=`\n${pass?'PASS':'FAIL'} · ${text}`;};
 async function load(url){const i=new Image();i.src=url;await i.decode();return i;}
@@ -21,7 +21,7 @@ $('run').onclick=async()=>{
  for(const [label,factor]of [['Dim light simulation',.48],['Bright light simulation',1.3]]){const c=canvas(original.width,original.height),cx=c.getContext('2d');cx.filter=`brightness(${factor})`;cx.drawImage(original,0,0);cases.push([label,c,1]);}
  let single;
  for(const[name,input,expected]of cases){const started=performance.now(),landmarks=await tracker.detect(input,'IMAGE',8,1280),patches=landmarks.map((lm,i)=>landmarkToPatch(lm,input.width,input.height,'nose-'+i)).filter(Boolean),c=canvas(input.width,input.height);render(input,c,patches,patch);sample(name,c);report(`${name}: ${patches.length} face(s), ${Math.round(performance.now()-started)} ms · ${tracker.backend}`,patches.length>=expected);if(input===original)single=patches;}
- let artwork=0;for(const d of DESIGNS){await loadPatchImage(d.id);artwork++;}report(`${artwork} / ${DESIGNS.length} plaster SVGs decode successfully`,artwork===73);
+ let artwork=0;for(const d of DESIGNS){await loadPatchImage(d.id);artwork++;}report(`${artwork} / ${DESIGNS.length} plaster SVGs decode successfully`,artwork===DESIGNS.length);
  const pngCanvas=canvas(512,512);render(original,pngCanvas,single,patch);const png=await new Promise(r=>pngCanvas.toBlob(r,'image/png'));const decoded=await createImageBitmap(png);report(`Filtered PNG encodes and decodes: ${decoded.width} × ${decoded.height}, ${png.size} bytes`,decoded.width===512&&png.size>1000);decoded.close();
  if(!window.MediaRecorder||!pngCanvas.captureStream){report('Canvas recording API unavailable',false);return;}
  const osc=ac.createOscillator(),dest=ac.createMediaStreamDestination();osc.frequency.value=440;osc.connect(dest);osc.start();const stream=pngCanvas.captureStream(20);for(const t of dest.stream.getAudioTracks())stream.addTrack(t);

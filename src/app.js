@@ -1,7 +1,8 @@
-import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.0.7';
-import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,recordingMime,formatTime,cameraError} from './core.js?v=1.0.7';
-import {drawBandage} from './render.js?v=1.0.7';
-import {FaceTracker} from './tracker.js?v=1.0.7';
+import {progressAt,unlockPhoto,cleanCount} from './progress.js?v=1.1.0';
+import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.1.0';
+import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,recordingMime,formatTime,cameraError} from './core.js?v=1.1.0';
+import {drawBandage} from './render.js?v=1.1.0';
+import {FaceTracker} from './tracker.js?v=1.1.0';
 const $=id=>document.getElementById(id);
 const stage=$('stage'),ctx=stage.getContext('2d',{alpha:false}),video=$('sourceVideo');
 const tracker=new FaceTracker(),images=new Map();
@@ -10,6 +11,9 @@ let patches=[],selected=null,compare=false,epoch=0,lastInfer=0,lastTracked=0,tra
 let recorder=null,recordStream=null,recording=false,chunks=[],recordBytes=0,recordStarted=0,resultBlob=null,resultUrl=null,photoUrl=null;
 const testCamera=new URLSearchParams(location.search).get('test-camera')==='1';
 let testRaf=0,testAudio=null,micPending=false,micRequest=0,testMetricsAt=0,testFrames=0;
+const progressKey=testCamera?'manlyfy-test-progress-v1':'manlyfy-progress-v1';
+let photoCount=0,photoCredited=false,progressEligible=false,newestReward=null;
+try{photoCount=cleanCount(JSON.parse(localStorage.getItem(progressKey)||'{}').photos);}catch{}
 let drag=null,toastTimer=null,deferredInstall=null,recordTimer=null,recordFailed=false;
 const ratings=['147% MANLY · May require a larger doorway.','208% MANLY · Dinosaurs are asking for tips.','112% MANLY · Officially too powerful for errands.','999% MANLY · The meter has resigned.','183% MANLY · Your nose has been promoted.','156% MANLY · Small plaster. Enormous authority.','301% MANLY · Approved by absolutely no scientists.','124% MANLY · Could open a slightly stubborn jar.','240% MANLY · Your reflection asked for a selfie.'];
 function toast(message){clearTimeout(toastTimer);$('toast').textContent=message;$('toast').hidden=false;toastTimer=setTimeout(()=>$('toast').hidden=true,4200);}
@@ -22,7 +26,7 @@ function render(){
   const now=performance.now();
   const{source,sw,sh}=dims();if(!source||live&&video.readyState<2)return;
   const r=containRect(sw,sh,stage.width,stage.height);ctx.fillStyle='#15151e';ctx.fillRect(0,0,stage.width,stage.height);
-  ctx.save();if(mirrored){ctx.translate(r.x*2+r.width,0);ctx.scale(-1,1);}ctx.drawImage(source,r.x,r.y,r.width,r.height);ctx.restore();
+  ctx.save();if(mirrored){ctx.translate(r.x*2+r.width,0);ctx.scale(-1,1);}ctx.drawImage(live&&tracker.cpuFrame?tracker.cpuFrame:source,r.x,r.y,r.width,r.height);ctx.restore();
   if(compare&&!recording)return;
   if(live&&now-lastTracked>trackingHold)return;
   for(const p of patches){const img=images.get(p.design||design);if(img)drawBandage(ctx,img,patchPose(p, r,mirrored));}
@@ -54,11 +58,34 @@ function rebuildNoses(){
 }
 function syncSliders(){const p=patches.find(p=>p.id===selected);$('size').value=Math.round((p?.scale||1)*100);$('rotation').value=Math.round((p?.rotation||0)*180/Math.PI);$('sizeValue').textContent=$('size').value+'%';$('rotationValue').textContent=$('rotation').value+'°';}
 async function ensureDesign(id){if(!images.has(id))images.set(id,await loadPatchImage(id));}
-async function selectDesign(id,announce=true){await ensureDesign(id);design=id;patches=patches.map(p=>({...p,design:id}));const d=DESIGNS.find(x=>x.id===id);$('selectedName').textContent=d.name;document.querySelectorAll('.patch-card').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.id===id)));savePref();render();if(announce)toast(d.name+' has nose authority.');}
+function canUse(id){const index=DESIGNS.findIndex(d=>d.id===id);return index>=0&&index<progressAt(photoCount,DESIGNS.length).unlocked;}
+async function selectDesign(id,announce=true){if(!canUse(id)){const at=unlockPhoto(DESIGNS.findIndex(d=>d.id===id));toast(`Unlocks at ${at} photos. ${Math.max(0,at-photoCount)} more to go. Your nose believes in you.`);return;}await ensureDesign(id);design=id;patches=patches.map(p=>({...p,design:id}));const d=DESIGNS.find(x=>x.id===id);$('selectedName').textContent=d.name;document.querySelectorAll('.patch-card').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.id===id)));savePref();render();if(announce)toast(d.name+' has nose authority.');}
 function buildCollection(){
   $('categories').replaceChildren(...CATEGORIES.map(name=>{const b=document.createElement('button');b.className='category'+(name===category?' active':'');b.textContent=name;b.setAttribute('aria-pressed',String(name===category));b.onclick=()=>{category=name;buildCollection();};return b;}));
-  $('patchGrid').replaceChildren(...DESIGNS.filter(d=>category==='All patches'||d.category===category).map(d=>{const b=document.createElement('button');b.className='patch-card';b.dataset.id=d.id;b.setAttribute('aria-label',d.name+' plaster');b.setAttribute('aria-pressed',String(d.id===design));b.innerHTML=patchSVG(d)+`<span class="patch-label">${d.name}</span>`;b.onclick=()=>selectDesign(d.id).catch(()=>notice('That plaster could not be loaded. Please try another.'));return b;}));
-  $('collectionCount').textContent=DESIGNS.length;
+  $('patchGrid').replaceChildren(...DESIGNS.filter(d=>category==='All patches'||d.category===category).map(d=>{const b=document.createElement('button');const index=DESIGNS.indexOf(d),locked=!canUse(d.id);b.className='patch-card'+(locked?' is-locked':'')+' tier-'+d.tier.toLowerCase();b.dataset.id=d.id;b.setAttribute('aria-label',d.name+' plaster'+(locked?` · locked · ${unlockPhoto(index)} photos`:''));b.setAttribute('aria-pressed',String(d.id===design));b.innerHTML=patchSVG(d)+`<span class="patch-label">${d.name}</span><span class="patch-tier">${locked?'◈ '+unlockPhoto(index)+' photos':d.tier}</span>`;b.onclick=()=>selectDesign(d.id).catch(()=>notice('That plaster could not be loaded. Please try another.'));return b;}));
+  updateProgress();
+}
+
+function updateProgress(){
+ const state=progressAt(photoCount,DESIGNS.length);$('collectionCount').textContent=`${state.unlocked}/${DESIGNS.length}`;
+ $('photoTotal').textContent=photoCount.toLocaleString();$('unlockedTotal').textContent=state.unlocked;
+ $('rewardProgress').value=state.fraction*100;
+ $('rewardProgress').setAttribute('aria-label',state.next?`Progress to ${state.next.photos} photos`:'Collection complete');
+ $('nextReward').textContent=state.next?`${state.next.photos-photoCount} more ${state.next.photos-photoCount===1?'photo':'photos'} → ${state.next.amount===1?DESIGNS[state.unlocked].name:state.next.amount+' new patches'}`:'Full collection unlocked. Legendary nose behaviour.';
+ $('nextMilestone').textContent=state.next?`NEXT: ${state.next.photos} PHOTOS`:'COLLECTION COMPLETE';
+}
+function creditPhoto(){
+ if(photoCredited||!progressEligible)return;photoCredited=true;
+ const before=progressAt(photoCount,DESIGNS.length);photoCount++;const after=progressAt(photoCount,DESIGNS.length);
+ try{localStorage.setItem(progressKey,JSON.stringify({version:1,photos:photoCount}));}catch{toast('Progress works for this visit. Browser storage is unavailable, so it cannot be saved.');}
+ buildCollection();
+ if(after.unlocked>before.unlocked){
+  const earned=DESIGNS.slice(before.unlocked,after.unlocked);newestReward=earned[0].id;
+  $('unlockTitle').textContent=earned.length===1?'Fresh patch. Fresh power.':`${earned.length} new patches. Big nose energy.`;
+  $('unlockMessage').textContent=`${photoCount} photos. You earned this. Every design is free.`;
+  $('unlockArt').replaceChildren(...earned.map(d=>{const item=document.createElement('div');item.innerHTML=patchSVG(d)+`<strong>${d.name}</strong><small>${d.tier}</small>`;return item;}));
+  $('unlockDialog').showModal();
+ }else toast(`Photo ${photoCount}. ${after.next?after.next.photos-photoCount+' to your next unlock.':'Legendary status maintained.'}`);
 }
 function savePref(){try{localStorage.setItem('manlyfy-prefs',JSON.stringify({design,ratio:$('ratio').value,quality:$('quality').value,group:$('groupToggle').checked}));}catch{}}
 async function waitIdle(){for(let i=0;tracker.busy&&i<100;i++)await new Promise(r=>setTimeout(r,30));}
@@ -81,7 +108,7 @@ async function decodePhoto(file){
 }
 async function openPhoto(file,isDemo=false){
   if(recording)return;const token=++epoch;busy(true,'Getting your photo ready…');notice();
-  try{const c=await decodePhoto(file);if(token!==epoch)return;stopLive(false);photo=c;mirrored=false;mode='photo';patches=[];selected=null;compare=false;$('compareBtn').setAttribute('aria-pressed','false');showMedia();resize();rate();updateControls();if(isDemo)notice('Demo: NASA astronaut Eileen Collins, public-domain photograph. Your own uploads stay on your device.');await detectPhoto(epoch);}
+  try{const c=await decodePhoto(file);if(token!==epoch)return;stopLive(false);photo=c;progressEligible=!isDemo;photoCredited=false;mirrored=false;mode='photo';patches=[];selected=null;compare=false;$('compareBtn').setAttribute('aria-pressed','false');showMedia();resize();rate();updateControls();if(isDemo)notice('Demo: NASA astronaut Eileen Collins, public-domain photograph. Your own uploads stay on your device.');await detectPhoto(epoch);}
   catch(e){busy(false);notice(e.message);}
 }
 function stopMic(){micRequest++;micPending=false;if(testAudio){testAudio.close().catch(()=>{});testAudio=null;}micStream?.getTracks().forEach(t=>t.stop());micStream=null;$('micState').textContent='off';}
@@ -97,7 +124,7 @@ async function enableMic(){
 }
 function frozenSource(){if(video.readyState<2||!video.videoWidth)return null;const c=document.createElement('canvas');const s=Math.min(1,2560/Math.max(video.videoWidth,video.videoHeight));c.width=Math.round(video.videoWidth*s);c.height=Math.round(video.videoHeight*s);c.getContext('2d').drawImage(video,0,0,c.width,c.height);return c;}
 function stopLive(preserve=true){
-  if(recording)stopRecording();if(live&&preserve){photo=frozenSource()||photo;}
+  if(recording)stopRecording();if(live&&preserve){photo=frozenSource()||photo;progressEligible=false;photoCredited=false;}
   live=false;epoch++;cancelAnimationFrame(testRaf);testRaf=0;cancelAnimationFrame(raf);raf=0;stream?.getTracks().forEach(t=>t.stop());stream=null;stopMic();video.srcObject=null;
   if(photo){showMedia();resize();rebuildNoses();render();faceStatus('Camera off · media stays on your device');}else{stage.hidden=true;$('welcome').hidden=false;$('viewfinder').classList.remove('has-media');$('faceStatus').hidden=true;}
   updateControls();
@@ -145,7 +172,7 @@ function loop(time){
   if(recording){const elapsed=performance.now()-recordStarted;$('timer').textContent=formatTime(elapsed);if(elapsed>=180000){toast('Three glorious minutes. Saving your clip.');stopRecording();}}
 }
 async function takePhoto(){
-  if(!live){startCamera();return;}const snapshot=frozenSource();if(!snapshot)return;photo=snapshot;stopLive(false);photo=snapshot;mode='photo';rate();showMedia();resize();rebuildNoses();updateControls();$('flash').classList.remove('pop');void $('flash').offsetWidth;$('flash').classList.add('pop');await detectPhoto(epoch);
+  if(!live){startCamera();return;}const snapshot=frozenSource();if(!snapshot)return;photo=snapshot;stopLive(false);photo=snapshot;progressEligible=true;photoCredited=false;mode='photo';rate();showMedia();resize();rebuildNoses();updateControls();$('flash').classList.remove('pop');void $('flash').offsetWidth;$('flash').classList.add('pop');await detectPhoto(epoch);creditPhoto();
 }
 async function startRecording(){
   if(!live){startCamera();return;}
@@ -168,7 +195,7 @@ async function startRecording(){
   }catch(e){recording=false;recordStream?.getTracks().forEach(t=>t.stop());recordStream=null;notice('This browser could not start the video recorder. Try another browser, or take a photo.');updateControls();}
 }
 function stopRecording(){if(recorder&&recorder.state!=='inactive'){recorder.stop();$('shutter').disabled=true;$('shutterHint').textContent='SAVING YOUR MANLY…';}}
-async function photoBlob(){if(!photo)throw new Error('Take or upload a photo first.');const original=compare;compare=false;render();const blob=await new Promise(resolve=>stage.toBlob(resolve,'image/png'));compare=original;render();if(!blob)throw new Error('The photo could not be exported. Try a smaller image.');return blob;}
+async function photoBlob(){if(!photo)throw new Error('Take or upload a photo first.');const original=compare;compare=false;render();const blob=await new Promise(resolve=>stage.toBlob(resolve,'image/png'));compare=original;render();if(!blob)throw new Error('The photo could not be exported. Try a smaller image.');creditPhoto();return blob;}
 function fileName(type){return`MANLYFY-${new Date().toISOString().replace(/[:.]/g,'-')}.${type}`;}
 function downloadBlob(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);toast('Saved with 100% MANLY. 0% watermark.');}
 async function shareBlob(blob,name){const file=new File([blob],name,{type:blob.type});if(navigator.canShare?.({files:[file]})){try{await navigator.share({files:[file],title:'MANLYFY',text:'The Manliest Camera on Earth.'});}catch(e){if(e.name!=='AbortError')notice('Sharing was unavailable. Download your creation and share it from your gallery.');}}else{downloadBlob(blob,name);toast('Downloaded. Share it from your gallery.');}}
@@ -181,7 +208,7 @@ $('flipBtn').onclick=()=>startCamera(facing==='user'?'environment':'user');
 for(const id of ['uploadBtn','welcomeUpload'])$(id).onclick=()=>$('fileInput').click();
 $('fileInput').onchange=()=>{const file=$('fileInput').files[0];if(file)openPhoto(file);$('fileInput').value='';};
 $('demoBtn').onclick=async()=>{try{const response=await fetch('assets/demo-astronaut.png');if(!response.ok)throw new Error();await openPhoto(new File([await response.blob()],'demo.png',{type:'image/png'}),true);}catch{notice('The demo could not load. Upload a photo or open your camera.');}};
-$('roulette').onclick=async()=>{const candidates=DESIGNS.filter(d=>d.id!==design);const d=candidates[Math.floor(Math.random()*candidates.length)];$('roulette').classList.add('rolling');await selectDesign(d.id);setTimeout(()=>$('roulette').classList.remove('rolling'),500);document.querySelector(`.patch-card[data-id="${d.id}"]`)?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});};
+$('roulette').onclick=async()=>{const candidates=DESIGNS.filter(d=>canUse(d.id)&&d.id!==design);const d=candidates[Math.floor(Math.random()*candidates.length)];$('roulette').classList.add('rolling');await selectDesign(d.id);setTimeout(()=>$('roulette').classList.remove('rolling'),500);document.querySelector(`.patch-card[data-id="${d.id}"]`)?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});};
 $('ratio').onchange=()=>{savePref();resize();};$('quality').onchange=()=>{savePref();resize();toast('Performance preference saved. Reopen the camera to change its capture resolution.');};
 $('groupToggle').onchange=()=>{savePref();if(photo&&!live)detectPhoto();};
 $('audioToggle').onchange=()=>{$('audioToggle').checked?enableMic():stopMic();};
@@ -191,7 +218,7 @@ for(const id of ['size','rotation'])$(id).oninput=()=>{const p=patches.find(p=>p
 $('addPatch').onclick=()=>{patches.push({id:crypto.randomUUID(),x:.5,y:.48,width:.25,angle:0,scale:1,rotation:0,design,manual:true});selected=patches.at(-1).id;rebuildNoses();render();faceStatus(`${patches.length} ${patches.length===1?'plaster':'plasters'} · drag to position`);};
 $('removePatch').onclick=()=>{patches=patches.filter(p=>p.id!==selected);selected=null;rebuildNoses();render();};
 $('redetect').onclick=()=>{notice();detectPhoto();};
-$('mixGroup').onclick=async()=>{await Promise.all(patches.map(async p=>{p.design=DESIGNS[1+Math.floor(Math.random()*(DESIGNS.length-1))].id;await ensureDesign(p.design);}));render();toast('Nobody in this group has the same personality.');};
+$('mixGroup').onclick=async()=>{await Promise.all(patches.map(async p=>{const pool=DESIGNS.filter(d=>canUse(d.id));p.design=pool[Math.floor(Math.random()*pool.length)].id;await ensureDesign(p.design);}));render();toast('Nobody in this group has the same personality.');};
 $('rerate').onclick=rate;
 $('savePhoto').onclick=async()=>{try{downloadBlob(await photoBlob(),fileName('png'));}catch(e){notice(e.message);}};
 $('sharePhoto').onclick=async()=>{try{await shareBlob(await photoBlob(),fileName('png'));}catch(e){notice(e.message);}};
@@ -202,6 +229,10 @@ stage.onpointerdown=e=>{if(live||!photo||working)return;const b=stage.getBoundin
 stage.onpointermove=e=>{if(!drag)return;const b=stage.getBoundingClientRect(),r=rect(),p=patches.find(p=>p.id===drag.id);if(!p)return;const dx=((e.clientX-b.left)*stage.width/b.width-drag.x)/r.width,dy=((e.clientY-b.top)*stage.height/b.height-drag.y)/r.height;p.x=clamp(drag.px+(mirrored?-dx:dx),0,1);p.y=clamp(drag.py+dy,0,1);render();};
 stage.onpointerup=stage.onpointercancel=()=>drag=null;
 stage.onkeydown=e=>{if(live||!photo||!selected)return;const p=patches.find(p=>p.id===selected),step=e.shiftKey?.015:.003;if(!p)return;const moves={ArrowLeft:[-step,0],ArrowRight:[step,0],ArrowUp:[0,-step],ArrowDown:[0,step]};if(!moves[e.key])return;e.preventDefault();p.x=clamp(p.x+moves[e.key][0]*(mirrored?-1:1),0,1);p.y=clamp(p.y+moves[e.key][1],0,1);render();};
+$('wearReward').onclick=()=>{if(newestReward)selectDesign(newestReward);$('unlockDialog').close();};
+$('supportBtn').onclick=()=>$('supportDialog').showModal();
+$('copyInterac').onclick=async()=>{try{await navigator.clipboard.writeText('bookclodd@gmail.com');$('copyInterac').textContent='Copied!';}catch{toast('Copy the email shown, then use your banking app.');}};
+$('gameHelp').onclick=()=>$('gameDialog').showModal();
 for(const id of ['helpBtn','privacyBtn'])$(id).onclick=()=>$('helpDialog').showModal();
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());
 $('resultDialog').addEventListener('close',()=>$('resultVideo').pause());
@@ -211,6 +242,7 @@ window.addEventListener('appinstalled',()=>toast('Installed. Your nose has a hom
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&live){stopLive(true);notice('Camera stopped because you left the tab. Your media stays here. Reopen the camera to continue.');}});
 window.addEventListener('pagehide',()=>{stopLive(false);tracker.dispose();});
 try{const p=JSON.parse(localStorage.getItem('manlyfy-prefs')||'{}');if(DESIGNS.some(d=>d.id===p.design))design=p.design;if(['original','square','vertical'].includes(p.ratio))$('ratio').value=p.ratio;if(['lite','balanced'].includes(p.quality))$('quality').value=p.quality;if(typeof p.group==='boolean')$('groupToggle').checked=p.group;}catch{}
+if(!canUse(design))design='classic';
 if(testCamera){const n=document.createElement('p');n.className='notice';n.textContent='VERIFICATION MODE · Simulated camera and audio only. Open the normal app URL for your real camera.';document.querySelector('main').prepend(n);}
 buildCollection();ensureDesign(design).then(()=>selectDesign(design,false));updateControls();
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.0.7',{updateViaCache:'none'}).catch(()=>{}));
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.1.0',{updateViaCache:'none'}).catch(()=>{}));
