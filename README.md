@@ -4,7 +4,7 @@
 
 App: https://tyclodd.github.io/manlyfy/
 
-[Release screenshot](docs/screenshots/manlyfy-v1.1.2.jpg) · [Verification record](docs/TESTING.md) · [Name research](docs/NAME-RESEARCH.md)
+[Release screenshot](docs/screenshots/manlyfy-v1.2.2.jpg) · [Verification record](docs/TESTING.md) · [Name research](docs/NAME-RESEARCH.md)
 
 ## Features implemented
 
@@ -35,7 +35,7 @@ Third-party runtime assets are pinned to `@mediapipe/tasks-vision` **0.10.32** a
 - `src/app.js`: UI, camera lifecycle, editing, rendering, exports and MediaRecorder.
 - `src/face-worker.js`, `src/tracker.js`: worker-first MediaPipe inference with automatic browser-canvas and CPU-only compatibility paths, one in-flight scan and timeouts. Single-face live mode is the default; photos always support up to 8 faces.
 - `src/cpu-worker.js`, `src/cpu-tracker.js`: CPU-only face-api inference in an OffscreenCanvas worker using RGB tensors, with a main-thread fallback for older browsers. No identity models.
-- `src/motion.js`: sparse Lucas–Kanade optical flow follows image features between neural scans at up to 30 updates/s (20 in Lite). It buffers up to 4 seconds of small grayscale frames and replays a delayed neural anchor to the current frame. The preview is never frozen to an old CPU scan. Confidence failures hide the overlay and await reacquisition. All frame buffers stay in memory and are cleared when the camera stops.
+- `src/motion.js`: sparse Lucas–Kanade optical flow follows image features between neural scans at up to 30 updates/s (20 in Lite). It buffers up to 4 seconds of small grayscale frames and replays a delayed neural anchor to the current frame. The preview is never frozen to an old CPU scan. Confidence failures hide the overlay and await reacquisition. All frame buffers stay in memory; motion history is cleared when the camera stops.
 - `src/progress.js`: local photo-count progression, reward packs and unlock thresholds.
 - `src/render.js`: curved, yaw-aware artwork wrapping over the nose bridge.
 - `src/core.js`: geometry, smoothing, output fitting, codec selection and permission errors.
