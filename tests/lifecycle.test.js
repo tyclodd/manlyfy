@@ -21,3 +21,9 @@ test('camera frame callbacks and fallback ticks never process duplicate frames',
  assert.equal(clock.process(1),true);assert.equal(clock.process(2),false);video.currentTime=.033;assert.equal(clock.process(34),true);
  clock.videoHandle=7;clock.stop();video.currentTime=.066;assert.equal(clock.process(67),false);assert.equal(video.cancelled,7);assert.deepEqual(seen,[1,34]);
 });
+test('continuous media time does not trigger flow twice for one decoded frame',()=>{
+ let frames=1;const video={readyState:2,currentTime:0,getVideoPlaybackQuality:()=>({totalVideoFrames:frames})},seen=[];
+ const clock=new CameraClock(video,t=>seen.push(t));clock.active=true;
+ assert.equal(clock.process(1),true);video.currentTime=.016;assert.equal(clock.process(17),false);
+ frames++;video.currentTime=.033;assert.equal(clock.process(34),true);assert.deepEqual(seen,[1,34]);
+});
