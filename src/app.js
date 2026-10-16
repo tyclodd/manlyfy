@@ -1,8 +1,8 @@
-import {progressAt,unlockPhoto,cleanCount} from './progress.js?v=1.1.1';
-import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.1.1';
-import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,recordingMime,formatTime,cameraError} from './core.js?v=1.1.1';
-import {drawBandage} from './render.js?v=1.1.1';
-import {FaceTracker} from './tracker.js?v=1.1.1';
+import {progressAt,unlockPhoto,cleanCount} from './progress.js?v=1.1.2';
+import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.1.2';
+import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,recordingMime,formatTime,cameraError} from './core.js?v=1.1.2';
+import {drawBandage} from './render.js?v=1.1.2';
+import {FaceTracker} from './tracker.js?v=1.1.2';
 const $=id=>document.getElementById(id);
 const stage=$('stage'),ctx=stage.getContext('2d',{alpha:false}),video=$('sourceVideo');
 const tracker=new FaceTracker(),images=new Map();
@@ -62,7 +62,7 @@ function canUse(id){const index=DESIGNS.findIndex(d=>d.id===id);return index>=0&
 async function selectDesign(id,announce=true){if(!canUse(id)){const at=unlockPhoto(DESIGNS.findIndex(d=>d.id===id));toast(`Unlocks at ${at} photos. ${Math.max(0,at-photoCount)} more to go. Your nose believes in you.`);return;}await ensureDesign(id);design=id;patches=patches.map(p=>({...p,design:id}));const d=DESIGNS.find(x=>x.id===id);$('selectedName').textContent=d.name;document.querySelectorAll('.patch-card').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.id===id)));savePref();render();if(announce)toast(d.name+' has nose authority.');}
 function buildCollection(){
   $('categories').replaceChildren(...CATEGORIES.map(name=>{const b=document.createElement('button');b.className='category'+(name===category?' active':'');b.textContent=name;b.setAttribute('aria-pressed',String(name===category));b.onclick=()=>{category=name;buildCollection();};return b;}));
-  $('patchGrid').replaceChildren(...DESIGNS.filter(d=>category==='All patches'||d.category===category).map(d=>{const b=document.createElement('button');const index=DESIGNS.indexOf(d),locked=!canUse(d.id);b.className='patch-card'+(locked?' is-locked':'')+' tier-'+d.tier.toLowerCase();b.dataset.id=d.id;b.setAttribute('aria-label',d.name+' plaster'+(locked?` · locked · ${unlockPhoto(index)} photos`:''));b.setAttribute('aria-pressed',String(d.id===design));b.innerHTML=patchSVG(d)+`<span class="patch-label">${d.name}</span><span class="patch-tier">${locked?'◈ '+unlockPhoto(index)+' photos':d.tier}</span>`;b.onclick=()=>selectDesign(d.id).catch(()=>notice('That plaster could not be loaded. Please try another.'));return b;}));
+  $('patchGrid').replaceChildren(...DESIGNS.filter(d=>category==='All patches'||d.category===category).map(d=>{const b=document.createElement('button');const index=DESIGNS.indexOf(d),locked=!canUse(d.id);b.className='patch-card'+(locked?' is-locked':'')+' tier-'+d.tier.toLowerCase();b.dataset.id=d.id;b.setAttribute('aria-label',d.name+' plaster'+(locked?` · locked · ${unlockPhoto(index)} photos`:''));b.setAttribute('aria-pressed',String(d.id===design));b.innerHTML=`<img class="patch-art" alt="" src="data:image/svg+xml,${encodeURIComponent(patchSVG(d))}">`+`<span class="patch-label">${d.name}</span><span class="patch-tier">${locked?'◈ '+unlockPhoto(index)+' photos':d.tier}</span>`;b.onclick=()=>selectDesign(d.id).catch(()=>notice('That plaster could not be loaded. Please try another.'));return b;}));
   updateProgress();
 }
 
@@ -83,7 +83,7 @@ function creditPhoto(){
   const earned=DESIGNS.slice(before.unlocked,after.unlocked);newestReward=earned[0].id;
   $('unlockTitle').textContent=earned.length===1?'Fresh patch. Fresh power.':`${earned.length} new patches. Big nose energy.`;
   $('unlockMessage').textContent=`${photoCount} photos. You earned this. Every design is free.`;
-  $('unlockArt').replaceChildren(...earned.map(d=>{const item=document.createElement('div');item.innerHTML=patchSVG(d)+`<strong>${d.name}</strong><small>${d.tier}</small>`;return item;}));
+  $('unlockArt').replaceChildren(...earned.map(d=>{const item=document.createElement('div');item.innerHTML=`<img alt="" src="data:image/svg+xml,${encodeURIComponent(patchSVG(d))}">`+`<strong>${d.name}</strong><small>${d.tier}</small>`;return item;}));
   $('unlockDialog').showModal();
  }else toast(`Photo ${photoCount}. ${after.next?after.next.photos-photoCount+' to your next unlock.':'Legendary status maintained.'}`);
 }
@@ -149,7 +149,7 @@ async function startCamera(nextFacing=facing){
     if(token!==epoch){stream.getTracks().forEach(t=>t.stop());return;}
     video.srcObject=stream;await video.play();
     if(!video.videoWidth)await new Promise((resolve,reject)=>{const timeout=setTimeout(()=>reject(new Error('Camera did not return an image.')),10000);video.addEventListener('loadedmetadata',()=>{clearTimeout(timeout);resolve();},{once:true});});
-    if(token!==epoch)return;if(testCamera)notice('TEST CAMERA: animated public-domain photo. Optional mic uses a synthetic tone. This does not test physical camera or microphone hardware.');live=true;lastInfer=0;lastTracked=0;showMedia();resize();faceStatus('Loading face tracker…');busy(false);loop(performance.now());
+    if(token!==epoch)return;if(testCamera)notice('TEST CAMERA: animated public-domain photo. Optional mic uses a synthetic tone. This does not test physical camera or microphone hardware.');live=true;lastInfer=0;lastTracked=0;tracker.resetVideo();showMedia();resize();faceStatus('Loading face tracker…');busy(false);loop(performance.now());
     if(mode==='video'&&$('audioToggle').checked)enableMic();
     try{await tracker.init();if(token===epoch)faceStatus('Face forward. Let’s find that nose.');}
     catch(e){if(token===epoch){notice('Live face tracking could not load. Take a photo and add a plaster manually, or reconnect and try again.');faceStatus('Tracking unavailable · photo editor still available',true);}}
@@ -159,7 +159,7 @@ async function startCamera(nextFacing=facing){
 }
 function loop(time){
   if(!live)return;raf=requestAnimationFrame(loop);
-  if(time-lastDraw>1000/30){render(time);lastDraw=time;}
+  if(!tracker.cpuFrame&&time-lastDraw>1000/30){render();lastDraw=time;}
   const interval=$('quality').value==='lite'?140:80;
   if(tracker.ready&&!tracker.busy&&time-lastInfer>interval&&video.readyState>=2){lastInfer=time;const token=epoch,inferStarted=performance.now();
     tracker.detect(video,'VIDEO',$('groupToggle').checked?4:1,$('quality').value==='lite'?480:720).then(found=>{
@@ -245,4 +245,4 @@ try{const p=JSON.parse(localStorage.getItem('manlyfy-prefs')||'{}');if(DESIGNS.s
 if(!canUse(design))design='classic';
 if(testCamera){const n=document.createElement('p');n.className='notice';n.textContent='VERIFICATION MODE · Simulated camera and audio only. Open the normal app URL for your real camera.';document.querySelector('main').prepend(n);}
 buildCollection();ensureDesign(design).then(()=>selectDesign(design,false));updateControls();
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.1.1',{updateViaCache:'none'}).catch(()=>{}));
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.1.2',{updateViaCache:'none'}).catch(()=>{}));

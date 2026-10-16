@@ -1,7 +1,7 @@
-import {drawBandage} from '../src/render.js?v=1.1.1';
-import {FaceTracker} from '../src/tracker.js?v=1.1.1';
-import {DESIGNS,loadPatchImage} from '../src/designs.js?v=1.1.1';
-import {landmarkToPatch,containRect,patchPose,recordingMime} from '../src/core.js?v=1.1.1';
+import {drawBandage} from '../src/render.js?v=1.1.2';
+import {FaceTracker} from '../src/tracker.js?v=1.1.2';
+import {DESIGNS,loadPatchImage} from '../src/designs.js?v=1.1.2';
+import {landmarkToPatch,containRect,patchPose,recordingMime} from '../src/core.js?v=1.1.2';
 const $=id=>document.getElementById(id),tracker=new FaceTracker();let blob,ac;
 const report=(text,pass=true)=>{$('results').textContent+=`\n${pass?'PASS':'FAIL'} · ${text}`;};
 async function load(url){const i=new Image();i.src=url;await i.decode();return i;}
@@ -33,7 +33,7 @@ $('run').onclick=async()=>{
  report(`Continuous VIDEO-mode tracking: ${tracked}/${ticks} frames detected (${(ticks/elapsed*1000).toFixed(1)} inference fps on this desktop browser)`,tracked>=4&&tracked>=ticks*.8);
  report(`Filtered video with synthetic audio records & decodes: ${blob.size} bytes, ${rec.mimeType}`,blob.size>5000&&$('playback').videoWidth===512);
  try{await $('playback').play();await new Promise(r=>setTimeout(r,450));report('Recorded video plays and advances',!$('playback').paused&&$('playback').currentTime>0);$('playback').pause();}catch{report('Autoplay unavailable; test manual playback',false);}
- report('Physical front/rear cameras, microphone input, Android install and low-powered phones: NOT VERIFIED here.');
+ $('results').textContent+='\nNOT VERIFIED · Physical front/rear cameras, microphone input, Android install and low-powered phones.';
  }catch(e){report(e.message,false);console.error(e);}finally{if(ac&&ac.state!=='closed')ac.close();$('run').disabled=false;tracker.dispose();$('results').textContent+='\nFINISHED';}
 };
 $('save').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='MANLYFY-qa-filtered-audio.'+(blob.type.includes('mp4')?'mp4':'webm');a.click();};
