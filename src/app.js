@@ -1,6 +1,6 @@
-import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.0.5';
-import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,recordingMime,formatTime,cameraError} from './core.js?v=1.0.5';
-import {FaceTracker} from './tracker.js?v=1.0.5';
+import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.0.6';
+import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,recordingMime,formatTime,cameraError} from './core.js?v=1.0.6';
+import {FaceTracker} from './tracker.js?v=1.0.6';
 const $=id=>document.getElementById(id);
 const stage=$('stage'),ctx=stage.getContext('2d',{alpha:false}),video=$('sourceVideo');
 const tracker=new FaceTracker(),images=new Map();
@@ -8,7 +8,7 @@ let design='classic',category='All patches',mode='photo',photo=null,live=false,s
 let patches=[],selected=null,compare=false,epoch=0,lastInfer=0,lastTracked=0,lastDraw=0,raf=0,working=false;
 let recorder=null,recordStream=null,recording=false,chunks=[],recordBytes=0,recordStarted=0,resultBlob=null,resultUrl=null,photoUrl=null;
 const testCamera=new URLSearchParams(location.search).get('test-camera')==='1';
-let testRaf=0,testAudio=null,micPending=false,micRequest=0;
+let testRaf=0,testAudio=null,micPending=false,micRequest=0,testMetricsAt=0,testFrames=0;
 let drag=null,toastTimer=null,deferredInstall=null,recordTimer=null,recordFailed=false;
 const ratings=['147% MANLY · May require a larger doorway.','208% MANLY · Dinosaurs are asking for tips.','112% MANLY · Officially too powerful for errands.','999% MANLY · The meter has resigned.','183% MANLY · Your nose has been promoted.','156% MANLY · Small plaster. Enormous authority.','301% MANLY · Approved by absolutely no scientists.','124% MANLY · Could open a slightly stubborn jar.','240% MANLY · Your reflection asked for a selfie.'];
 function toast(message){clearTimeout(toastTimer);$('toast').textContent=message;$('toast').hidden=false;toastTimer=setTimeout(()=>$('toast').hidden=true,4200);}
@@ -17,7 +17,8 @@ function busy(on,message='Finding your inner MANLY…'){working=on;$('busy').hid
 function dims(){const source=live?video:photo;return {source,sw:source?.videoWidth||source?.width||1,sh:source?.videoHeight||source?.height||1};}
 function rect(){const{sw,sh}=dims();return containRect(sw,sh,stage.width,stage.height);}
 function resize(){const{source,sw,sh}=dims();if(!source)return;const size=outputSize(sw,sh,$('ratio').value,live?($('quality').value==='lite'?960:1280):2560);if(recording)return;stage.width=size.width;stage.height=size.height;render();}
-function render(now=performance.now()){
+function render(){
+  const now=performance.now();
   const{source,sw,sh}=dims();if(!source||live&&video.readyState<2)return;
   const r=containRect(sw,sh,stage.width,stage.height);ctx.fillStyle='#15151e';ctx.fillRect(0,0,stage.width,stage.height);
   ctx.save();if(mirrored){ctx.translate(r.x*2+r.width,0);ctx.scale(-1,1);}ctx.drawImage(source,r.x,r.y,r.width,r.height);ctx.restore();
@@ -139,11 +140,12 @@ function loop(time){
   const interval=$('quality').value==='lite'?140:80;
   if(tracker.ready&&!tracker.busy&&time-lastInfer>interval&&video.readyState>=2){lastInfer=time;const token=epoch;
     tracker.detect(video,'VIDEO',$('groupToggle').checked?4:1,$('quality').value==='lite'?480:720).then(found=>{
-      if(!live||token!==epoch||found===null)return;const raw=found.map(lm=>landmarkToPatch(lm,video.videoWidth,video.videoHeight)).filter(Boolean);
+      if(!live||token!==epoch||found===null)return;testFrames++;const raw=found.map(lm=>landmarkToPatch(lm,video.videoWidth,video.videoHeight)).filter(Boolean);
       patches=smoothPatches(patches,raw,performance.now()).map(p=>({...p,design}));lastTracked=performance.now();
       faceStatus(patches.length?`${patches.length} ${patches.length===1?'nose':'noses'} locked · ${DESIGNS.find(d=>d.id===design).name}`:'No face found · face the camera',!patches.length);
     }).catch(e=>{if(token!==epoch)return;patches=[];faceStatus('Tracking paused · try a photo or Lite mode',true);notice('Tracking paused. Turn the camera off and reopen it, or use a photo.');tracker.dispose();updateControls();});
   }
+  if(testCamera&&time-testMetricsAt>500){testMetricsAt=time;$('notice').textContent=`TEST CAMERA · ${tracker.backend} · ${patches.length} patches · ${testFrames} results · result age ${Math.round(performance.now()-lastTracked)} ms · frame age ${Math.round(time-lastTracked)} ms · busy ${tracker.busy} · artwork ${images.has(design)}`;}
   if(recording){const elapsed=performance.now()-recordStarted;$('timer').textContent=formatTime(elapsed);if(elapsed>=180000){toast('Three glorious minutes. Saving your clip.');stopRecording();}}
 }
 async function takePhoto(){
@@ -215,4 +217,4 @@ window.addEventListener('pagehide',()=>{stopLive(false);tracker.dispose();});
 try{const p=JSON.parse(localStorage.getItem('manlyfy-prefs')||'{}');if(DESIGNS.some(d=>d.id===p.design))design=p.design;if(['original','square','vertical'].includes(p.ratio))$('ratio').value=p.ratio;if(['lite','balanced'].includes(p.quality))$('quality').value=p.quality;if(typeof p.group==='boolean')$('groupToggle').checked=p.group;}catch{}
 if(testCamera){const n=document.createElement('p');n.className='notice';n.textContent='VERIFICATION MODE · Simulated camera and audio only. Open the normal app URL for your real camera.';document.querySelector('main').prepend(n);}
 buildCollection();ensureDesign(design).then(()=>selectDesign(design,false));updateControls();
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.0.5',{updateViaCache:'none'}).catch(()=>{}));
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.0.6',{updateViaCache:'none'}).catch(()=>{}));
