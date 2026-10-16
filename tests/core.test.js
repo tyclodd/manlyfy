@@ -19,3 +19,5 @@ test('photo milestones keep three starters, increasing rewards and the requested
  for(const n of [0,1,3,4,5,99,100,149,150,999,1000]){const p=progressAt(n);assert(p.fraction>=0&&p.fraction<=1);}
 });
 test('starter artwork stays plain while earned tiers add detail',()=>{assert.deepEqual(DESIGNS.slice(0,3).map(d=>d.tier),['Starter','Starter','Starter']);assert(DESIGNS.slice(0,3).every(d=>d.motif===null));assert.equal(DESIGNS.filter(d=>d.tier==='Playful').length,24);assert.equal(DESIGNS.filter(d=>d.tier==='Deluxe').length,24);assert.equal(DESIGNS.filter(d=>d.tier==='Legendary').length,24);assert(patchSVG(DESIGNS[60]).length>patchSVG(DESIGNS[10]).length);});
+
+test('automatic sizing follows nose width and stays below two thirds of outer-eye span',()=>{const lm=[];lm[33]={x:.2,y:.3};lm[263]={x:.8,y:.3};lm[5]={x:.5,y:.45};lm[98]={x:.44,y:.5};lm[327]={x:.56,y:.5};assert(Math.abs(landmarkToPatch(lm,1000,1000).width-.21)<1e-10);lm[98]={x:.30,y:.5};lm[327]={x:.7,y:.5};assert(Math.abs(landmarkToPatch(lm,1000,1000).width-.396)<1e-10);});

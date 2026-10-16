@@ -1,8 +1,8 @@
-import {progressAt,unlockPhoto,cleanCount} from './progress.js?v=1.1.0';
-import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.1.0';
-import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,recordingMime,formatTime,cameraError} from './core.js?v=1.1.0';
-import {drawBandage} from './render.js?v=1.1.0';
-import {FaceTracker} from './tracker.js?v=1.1.0';
+import {progressAt,unlockPhoto,cleanCount} from './progress.js?v=1.1.1';
+import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.1.1';
+import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,recordingMime,formatTime,cameraError} from './core.js?v=1.1.1';
+import {drawBandage} from './render.js?v=1.1.1';
+import {FaceTracker} from './tracker.js?v=1.1.1';
 const $=id=>document.getElementById(id);
 const stage=$('stage'),ctx=stage.getContext('2d',{alpha:false}),video=$('sourceVideo');
 const tracker=new FaceTracker(),images=new Map();
@@ -245,4 +245,4 @@ try{const p=JSON.parse(localStorage.getItem('manlyfy-prefs')||'{}');if(DESIGNS.s
 if(!canUse(design))design='classic';
 if(testCamera){const n=document.createElement('p');n.className='notice';n.textContent='VERIFICATION MODE · Simulated camera and audio only. Open the normal app URL for your real camera.';document.querySelector('main').prepend(n);}
 buildCollection();ensureDesign(design).then(()=>selectDesign(design,false));updateControls();
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.1.0',{updateViaCache:'none'}).catch(()=>{}));
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.1.1',{updateViaCache:'none'}).catch(()=>{}));

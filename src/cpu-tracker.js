@@ -8,7 +8,7 @@ function library(){
 }
 export class CpuFaceTracker {
   async init(){this.api=await library();await this.api.tf.setBackend('cpu');await this.api.tf.ready();const root=new URL('../assets',import.meta.url).href;await Promise.all([this.api.nets.tinyFaceDetector.isLoaded?null:this.api.nets.tinyFaceDetector.loadFromUri(root),this.api.nets.faceLandmark68TinyNet.isLoaded?null:this.api.nets.faceLandmark68TinyNet.loadFromUri(root)]);this.canvas=document.createElement('canvas');this.context=this.canvas.getContext('2d',{willReadFrequently:true});}
-  mesh(positions,width,height){const points=[];for(const [to,from]of [[33,36],[263,45],[5,29]])points[to]={x:positions[from].x/width,y:positions[from].y/height};return points;}
+  mesh(positions,width,height){const points=[];for(const [to,from]of [[33,36],[263,45],[5,29],[98,31],[327,35]])points[to]={x:positions[from].x/width,y:positions[from].y/height};return points;}
   async followVideo(count){
     const output=[],nextBoxes=[];
     for(const box of this.boxes.slice(0,count)){
@@ -40,7 +40,7 @@ export class CpuFaceTracker {
       return results.slice(0,count).map(result=>{
         const p=result.landmarks.positions,points=[];
         const convert=point=>{let x=point.x/c.width,y=point.y/c.height;if(rotation===90)return{x:y,y:1-x};if(rotation===270)return{x:1-y,y:x};if(rotation===180)return{x:1-x,y:1-y};return{x,y};};
-        points[33]=convert(p[36]);points[263]=convert(p[45]);points[5]=convert(p[29]);return points;
+        points[33]=convert(p[36]);points[263]=convert(p[45]);points[5]=convert(p[29]);points[98]=convert(p[31]);points[327]=convert(p[35]);return points;
       });
     }
     return [];
