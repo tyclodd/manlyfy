@@ -1,8 +1,30 @@
 # MANLYFY verification record
 
-16 October 2026 · Public release 1.3.2 · https://tyclodd.github.io/manlyfy/
+17 October 2026 · Public release 1.4.1 · https://tyclodd.github.io/manlyfy/
 
-## 1.3.2 uploads, editing, rating and branding revision
+## 1.4.1 video downloads and shared logo
+
+The latest conversation review found two presentation gaps: video upload needed an explicit export action and persistent download, and the generator's MANLYFY card needed a single shared, readable logo. Both are published. The logo is a purple camera with a lens plaster carrying **star → airplane → star**; its airplane was redrawn for clarity at small sizes.
+
+| Check | Observed result |
+| --- | --- |
+| Source checks | `npm run check`: syntax checks and all 32 Node tests passed. Added codec-start fallback tests and branding checks for motif order, purple palette, matching legacy aliases, manifest icons and the shared header/ending source. |
+| Explicit upload-to-export flow | Public Video mode accepted a local H.264/AAC fixture. Create filtered video showed processing progress, then a persistent Download video link beside the preview. Clicking it downloaded the encoded file with no app confirmation or automatic result dialog. Preview and Share remain separate actions. |
+| Full clip plus three-second ending | Release 1.4.0 processed the 6-second public NASA motion fixture and generated a 3,811,008-byte, 540×960 VP8/48 kHz Opus WebM. Its 219 frames continued through 9.012 s. Decoded source frames showed the curved plaster; ending samples showed the animated logo, confetti and “IT’S MANLY NOW.” Original tone remained audible; the ending was silent for about 3.02 s. |
+| Final logo and audio in actual export | Release 1.4.1 processed the 2-second version with audio and the ending enabled. One-click download produced a 1,596,319-byte, 540×960 VP8/48 kHz Opus WebM, 123 frames through 5.138 s. The decoded ending visibly contained the final star–airplane–star artwork. Source audio was non-silent (mean −25.1 dB, peak −16.2 dB); silence began at 2.077 s and lasted about 3.08 s. |
+| Ending-free and silent export | With ending and original audio disabled, the same short input downloaded as a 403,777-byte, 720×960 H.264 MP4, 1.967 s, with no audio track. This verifies both options can be disabled. |
+| Persistent ready state | The final result bar displayed “00:05 · 1.5 MB · WebM · with audio · 3s MANLYFY ending”; the optional preview dialog was closed. The native Download video link remained available after export. |
+| Photo save regression | Switching back to Photo retained one detected nose. One Save photo click downloaded a valid 540×960 PNG. |
+| Shared logo on both live apps | Followed the public footer link to Manly Curses Generator. Scrolled to its MANLYFY promo and visually verified the loaded 96×96 purple camera, gold stars and blue airplane. Its image URL exactly matches the app header's canonical `manlyfy-star-plane-star.svg?v=1.4.1`; followed the promo back to MANLYFY. |
+| Browser and install artwork | Header, browser icon, Apple/Android image URLs, video ending and reusable kit reference the canonical art or matching raster exports. New PNG filenames and network-first manifest fetching avoid the earlier icon URLs. This is source/asset verification, not an OS install test or a guarantee that an existing home-screen shortcut updates immediately. |
+| Responsive layout | Public app iframe checked at 320, 390 and 1024 px: document widths 305, 375 and 1009 px, respectively (scrollbar allowance); no document-level overflow. |
+| Reusable kit | Rebuilt ZIP contains 75 SVG designs and 75 transparent PNGs; its logo SVG is byte-identical to the canonical app logo. It contains no private user media. |
+
+[Live generator logo](screenshots/manlyfy-generator-logo-v1.4.1.jpg) · [Persistent video download](screenshots/manlyfy-video-download-v1.4.1.jpg) · [Full conversation audit](REQUIREMENTS-AUDIT.md)
+
+The export files were inspected with ffprobe/ffmpeg and decoded frames were viewed. Native playback of this release was not completed after a cloud-browser automation timeout; earlier 1.3.2 playback below is historical evidence. Tests used only public fixtures and generated tones. Physical phones, native camera/microphone permissions, multi-touch, install behavior and native mobile sharing remain unverified. Processing runs in real time with the tab visible. The optional ending may be omitted if the tab is hidden or an output-memory limit stops recording.
+
+## Earlier 1.3.2 uploads, editing, rating and branding revision (historical baseline)
 
 The public app now accepts existing videos as well as multiple photos. A mode-specific local file picker replaces the photo-only upload flow. Imported clips can be previewed, paused and scrubbed before processing; audio uses a reusable local Web Audio graph. A paused clip retains its plaster. Processing restarts at the beginning with a fresh motion history and saves the filtered result automatically at the end.
 

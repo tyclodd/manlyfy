@@ -1,6 +1,8 @@
 # MANLYFY — full conversation audit
 
-16 October 2026 · Release 1.4.1. This checklist includes the original build request and every later change. The most recent instruction controls when a design preference changed. Implementation is distinguished from verified browser behavior and physical-device checks.
+17 October 2026 · Release 1.4.1. This checklist includes the original build request and every later change. The most recent instruction controls when a design preference changed. Implementation is distinguished from verified browser behavior and physical-device checks.
+
+Latest review: the live Manly Curses Generator promo now uses MANLYFY's canonical purple **star → airplane → star** logo. Video creation now leads to a persistent one-click download, with the requested optional three-second animated ending. Both final audio/ending and silent/ending-free files were downloaded and decoded. See [release verification](TESTING.md) and the [actual generator screenshot](screenshots/manlyfy-generator-logo-v1.4.1.jpg).
 
 | Request | Implementation / evidence | Limit |
 | --- | --- | --- |
@@ -41,11 +43,11 @@
 | Latest logo request | Purple camera with bandage over lens; star → plane → star replaces dinosaur/butterfly. The larger app header, browser icon, fresh Android/Apple icon filenames, filter kit and animated video ending use the same named SVG. The generator promo loads that canonical asset instead of a separate inline copy. Two gold stars flank a clearly drawn blue airplane. | Supersedes the earlier neutral-color/dinosaur preference. |
 | Creator support | Same public PayPal, Interac, Cameo and merch destinations as Manly Curses Generator. Label is “Support the MANLINESS.” | Optional links; no payments or purchases made. No “silly/silliness” copy retained in the app. |
 | Instagram and YouTube | Existing verified Tye Clodd Instagram/YouTube destinations. | No social messages or posts sent. |
-| Navigation between both apps | MANLYFY → Manly Curses Generator and reciprocal footer promo. | Generator edits are limited to the promo SVG, preserving concurrent work. |
+| Navigation between both apps | MANLYFY → Manly Curses Generator and reciprocal footer promo, exercised on the live sites. The generator card now loads the canonical shared logo. | Generator edits are limited to the MANLYFY promo, preserving concurrent work. |
 | Local/private/free | No media uploads, accounts, subscriptions, ads, analytics or required payments. Self-hosted models. | Static hosting still serves app assets; external support services have their own terms. |
 
 ## Browser evidence and remaining checks
 
-See TESTING.md for observed results, release screenshots and controlled benchmarks. The previous release's observed performance is historical; it is not automatically evidence for the changed frame loop. Every new claim is updated only after the corresponding check.
+See [TESTING.md](TESTING.md) for observed results, release screenshots and controlled benchmarks. The latest checks cover downloads, final logo/audio encoding, shared branding and mobile/desktop layout. Earlier performance measurements are explicitly historical; they do not establish phone latency. All 32 source tests passed.
 
 Not claimed as verified: real Android/iOS cameras, microphone input/permission prompts, physical two-finger gestures, native mobile share targets, PWA installation, real low-powered-phone performance, actual head yaw under motion blur, or native Instagram publication.

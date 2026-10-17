@@ -4,7 +4,9 @@
 
 App: https://tyclodd.github.io/manlyfy/
 
-[Camera screenshot](docs/screenshots/manlyfy-v1.3.2-camera.jpg) · [Rating screenshot](docs/screenshots/manlyfy-v1.3.2.jpg) · [Verification record](docs/TESTING.md) · [Name research](docs/NAME-RESEARCH.md) · [Full request audit](docs/REQUIREMENTS-AUDIT.md)
+[Shared logo on Manly Curses Generator](docs/screenshots/manlyfy-generator-logo-v1.4.1.jpg) · [Video download screenshot](docs/screenshots/manlyfy-video-download-v1.4.1.jpg) · [Verification record](docs/TESTING.md) · [Name research](docs/NAME-RESEARCH.md) · [Full request audit](docs/REQUIREMENTS-AUDIT.md)
+
+Release 1.4.1: both apps share the purple star–airplane–star camera logo. Video imports have an explicit creation step followed by a persistent download button; the optional three-second ending is encoded into the result. All 32 source tests pass. Public-browser downloads were decoded with audio/ending enabled and with both disabled; responsive layouts were checked at 320, 390 and 1024 px. Physical-device checks remain listed in the verification record.
 
 ## Features implemented
 
