@@ -1,7 +1,7 @@
 // Materialize file-provider bytes before decoding. No selected media is sent
 // over the network; compatibility decoders are disposable local workers.
 export const PHOTO_LIMIT=35*1024*1024;
-const MAX_EDGE=2560;
+const MAX_EDGE=8192;
 const EXT={jpg:'image/jpeg',jpeg:'image/jpeg',jpe:'image/jpeg',jfif:'image/jpeg',png:'image/png',apng:'image/png',webp:'image/webp',gif:'image/gif',bmp:'image/bmp',avif:'image/avif',heic:'image/heic',heif:'image/heic',tif:'image/tiff',tiff:'image/tiff',svg:'image/svg+xml',ico:'image/x-icon',pdf:'application/pdf'};
 export function imageMime(bytes){
  const b=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes),ascii=(a,z)=>String.fromCharCode(...b.slice(a,z));
@@ -41,7 +41,7 @@ export async function readPhotoBytes(file){
 function sizeCanvas(width,height){
  if(!(width>0&&height>0)||!Number.isFinite(width*height))throw new Error('The image has no readable dimensions.');
  if(width*height>80_000_000)throw failure('This picture is too large for phone editing. Choose a copy under 80 megapixels.','PIXEL_LIMIT');
- const scale=Math.min(1,MAX_EDGE/Math.max(width,height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(width*scale));c.height=Math.max(1,Math.round(height*scale));
+ const scale=Math.min(1,MAX_EDGE/Math.max(width,height),Math.sqrt(32_000_000/(width*height))),c=document.createElement('canvas');c.width=Math.max(1,Math.round(width*scale));c.height=Math.max(1,Math.round(height*scale));
  if(!c.getContext('2d'))throw failure('Your browser could not make space for this picture. Close other tabs and try a smaller copy.','MEMORY');return c;
 }
 function paintImage(image){const c=sizeCanvas(image.naturalWidth||image.width,image.naturalHeight||image.height),cx=c.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,c.width,c.height);cx.drawImage(image,0,0,c.width,c.height);return c;}
@@ -60,7 +60,7 @@ async function bitmapPhoto(blob){
 }
 function compatibilityPixels(buffer,mime){return new Promise((resolve,reject)=>{
  let worker,timer;const finish=(error,result)=>{clearTimeout(timer);worker?.terminate();error?reject(error):resolve(result);};
- try{worker=new Worker(new URL('./photo-worker.js?v=1.5.0',import.meta.url));worker.onmessage=e=>e.data.error?finish(new Error(e.data.error)):finish(null,e.data);worker.onerror=()=>finish(new Error('The local picture converter could not load. Reconnect and try again.'));timer=setTimeout(()=>finish(new Error('Local picture conversion took too long. Try a smaller copy.')),45000);worker.postMessage({buffer,mime},[buffer]);}catch(error){finish(error);}
+ try{worker=new Worker(new URL('./photo-worker.js?v=1.6.0',import.meta.url));worker.onmessage=e=>e.data.error?finish(new Error(e.data.error)):finish(null,e.data);worker.onerror=()=>finish(new Error('The local picture converter could not load. Reconnect and try again.'));timer=setTimeout(()=>finish(new Error('Local picture conversion took too long. Try a smaller copy.')),45000);worker.postMessage({buffer,mime},[buffer]);}catch(error){finish(error);}
 });}
 function pixelsCanvas({width,height,rgba,orientation=1}){
  const data=new Uint8ClampedArray(rgba),swap=orientation>=5,c=sizeCanvas(swap?height:width,swap?width:height),raw=document.createElement('canvas');raw.width=width;raw.height=height;

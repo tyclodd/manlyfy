@@ -40,3 +40,17 @@ test('a paused imported frame keeps its anchor after slow initial inference and 
  assert.equal(tracker.landmarks().length,1);assert.ok(error(tracker.landmarks()[0],m)<2.5);
  tracker.resumePaused(30000);tracker.push(image(m),width,height,30034);assert.equal(tracker.landmarks().length,1);
 });
+test('coarse reacquisition follows rapid reversals instead of losing a fast-moving nose',()=>{
+ const tracker=new MotionTracker({library});tracker.push(image(),width,height,0);tracker.seed([points()],tracker.current.id);let recovered=0;
+ for(let i=1;i<=36;i++){
+  const m={a:1,b:0,x:Math.sin(i*.6)*44,y:Math.sin(i*.36)*18};tracker.push(image(m),width,height,i*1000/60);
+  assert.equal(tracker.landmarks().length,1,'face stays tracked through the fast reversal');assert.ok(error(tracker.landmarks()[0],m)<1,'current-frame nose stays within one pixel');recovered+=tracker.recoveries;
+ }
+ assert.ok(recovered>0,'the fast-motion recovery path was actually used');
+});
+test('a briefly missed neural detection hides the overlay then recovers its original face design key',()=>{
+ const tracker=new MotionTracker({library});let frame=tracker.push(image(),width,height,0);tracker.seed([points()],frame.id);const id=tracker.landmarks()[0].trackId;
+ frame=tracker.push(image(),width,height,34);tracker.seed([],frame.id);assert.equal(tracker.landmarks().length,0);
+ frame=tracker.push(image(),width,height,68);tracker.seed([points()],frame.id);assert.equal(tracker.landmarks()[0].trackId,id);
+ tracker.resumePaused(10000);frame=tracker.push(image(),width,height,10034);tracker.seed([points()],frame.id);assert.equal(tracker.landmarks()[0].trackId,id);
+});

@@ -1,17 +1,18 @@
 # MANLYFY 💪🩹
 
+**Release 1.6.0:** faster live tracking with coarse fast-motion recovery, separate per-face designs for up to eight detected video faces, private creator access, frame-by-frame precise uploaded-video export, original dimensions up to 4K, and branded three-second endings. Photo imports preserve decoded resolution up to 8192 px / 32 MP. See [requirements audit](docs/REQUIREMENTS-AUDIT.md) and [current verification and limits](docs/TESTING.md). No perfect-tracking guarantee is made.
+
+
 **The Manliest Camera on Earth.** A free, browser-local photo and video nose-plaster camera.
 
 App: https://tyclodd.github.io/manlyfy/
 
 [Shared logo on Manly Curses Generator](docs/screenshots/manlyfy-generator-logo-v1.4.1.jpg) · [Video download screenshot](docs/screenshots/manlyfy-video-download-v1.4.1.jpg) · [Verification record](docs/TESTING.md) · [Name research](docs/NAME-RESEARCH.md) · [Full request audit](docs/REQUIREMENTS-AUDIT.md)
 
-Release 1.4.1: both apps share the purple star–airplane–star camera logo. Video imports have an explicit creation step followed by a persistent download button; the optional three-second ending is encoded into the result. All 32 source tests pass. Public-browser downloads were decoded with audio/ending enabled and with both disabled; responsive layouts were checked at 320, 390 and 1024 px. Physical-device checks remain listed in the verification record.
-
 ## Features implemented
 
 - Existing video uploads: preview and seek, then use the explicit Create filtered video button. Progress leads directly to a persistent, one-tap Download video link, with optional original audio (one clip, up to 3 minutes / 150 MB).
-- Optional three-second animated MANLYFY logo ending: “IT’S MANLY NOW.” Enabled by default; turn it off before creating a video for an ending-free export. The ending is permanently encoded after the clip.
+- Three-second animated MANLYFY logo/name/tagline ending on public imported-video exports. Creator edition can disable it. Live recording retains an ending toggle. The ending is permanently encoded after the clip.
 - Local photo upload (up to 10 selected photos), camera capture, higher-resolution/crop scans for smaller faces, and group photos (up to 8 faces). Navigation retains per-photo edits without decoding the entire batch into memory.
 - Drag, pinch to resize, twist to rotate, add and remove individual plasters; before/after comparison. One-tap Save photo sits beside the preview, with no reward modal interrupting the download.
 - 75 designs: three plain starters and 72 original illustrated rewards, categorized and swipeable on mobile. Photo milestones unlock Playful, Deluxe and Legendary artwork; all rewards are free.
@@ -37,9 +38,13 @@ This is a static, buildless app. Serve this directory over HTTPS or localhost wi
 Third-party runtime assets are pinned to `@mediapipe/tasks-vision` **0.10.32** and the float16 Face Landmarker model, version **1**. `python scripts/vendor.py` reproduces their download from official Google storage and the NPM CDN. The CJS bundle is renamed to `.js`, with an `exports` shim inside a classic worker so MediaPipe's WASM loader can use `importScripts`.
 
 - `src/app.js`: UI, camera lifecycle, editing, rendering, exports and MediaRecorder.
-- `src/face-worker.js`, `src/tracker.js`: worker-first MediaPipe inference with automatic browser-canvas and CPU-only compatibility paths, one in-flight scan and timeouts. Single-face live mode is the default; photos always support up to 8 faces.
+- `src/face-worker.js`, `src/tracker.js`: worker-first MediaPipe inference with automatic browser-canvas and CPU-only compatibility paths, one in-flight scan and timeouts. Single-face camera mode is the default; photos and imported videos always support up to 8 faces.
 - `src/cpu-worker.js`, `src/cpu-tracker.js`: CPU-only face-api inference in an OffscreenCanvas worker using RGB tensors, with a main-thread fallback for older browsers. No identity models.
-- `src/motion.js`: sparse Lucas–Kanade optical flow follows image features between neural scans at up to 30 updates/s (20 in Lite). It buffers up to 4 seconds of small grayscale frames and replays a delayed neural anchor to the current frame. The preview is never frozen to an old CPU scan. Confidence failures hide the overlay and await reacquisition. All frame buffers stay in memory; motion history is cleared when the camera stops.
+- `src/motion.js`: sparse Lucas–Kanade optical flow follows image features on decoded frames, targeting up to 60 updates/s in Precision and 30 in Lite. Four-level pyramids and coarse normalized-correlation recovery handle rapid translation before subpixel LK refinement and backward checking. It buffers up to 4 seconds of small grayscale frames and replays a delayed neural anchor to the current frame. The preview is never frozen to an old CPU scan. Confidence failures hide the overlay and await reacquisition. All frame buffers stay in memory; motion history is cleared when the camera stops.
+- `src/video-export.js`: WebCodecs-based frame-by-frame processing using a local pinned Mediabunny module, native-timestamp video encoding, original-audio packet copying, cancellation, 4K/1080p/720p support and a timestamped ending.
+- `src/access.js`: private fragment-token master access, local persistence and public token digest only.
+- `src/face-identity.js`: minimum-cost spatial track matching and velocity prediction for per-face design keys, without face recognition.
+- `src/export-quality.js`: output dimensions, adaptive bitrates and tracking profiles.
 - `src/video-outro.js`: responsive canvas logo animation appended to the active recording, with an abort path when leaving the tab.
 - `src/video-recorder.js`: retries supported codecs when a mobile encoder rejects an advertised recording type.
 - `src/video-import.js`: local clip decoding, bounded duration/file size, seeking and reusable original-audio routing.
@@ -59,8 +64,8 @@ GitHub Pages serves the `main` branch root. `.nojekyll` keeps this as plain stat
 ## Limits
 
 - A 2D landmark-following effect; strong profiles, occlusions, motion blur, tiny faces and very poor light may fail. Manual photo editing remains available.
-- Group tracking is capped at 4 live faces and 8 in photos. Live group is opt-in for performance. Lite mode reduces flow, inference and output resolution.
-- Exports up to 2560 pixels for photos and 1280 for live video (960 in Lite mode); source resolution can be smaller.
+- Tracking is capped at 8 detectable faces. Group camera is opt-in; imported clips automatically scan for up to 8. Lite mode reduces flow/inference load; export quality is selected separately.
+- Exports preserve decoded photos within 8192 px / 32 MP, and source video dimensions up to 3840 px longest edge. Encoder constraints can require a lower size. Original resolution does not mean lossless encoding.
 - Browser recording codecs vary. Some social apps require converting WebM to MP4 outside MANLYFY.
 - Uploaded clips must decode in the browser. Original audio uses Web Audio where supported; unsupported codecs require an H.264 MP4 or WebM copy. Processing takes roughly the clip duration.
 - Record with the tab visible. Leaving the tab turns off camera/mic and stops recording. Clips stop at 3 minutes or roughly 100 MB to limit phone memory usage.

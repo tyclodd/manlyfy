@@ -1,8 +1,35 @@
 # MANLYFY verification record
 
-17 October 2026 · Public release 1.4.1 · https://tyclodd.github.io/manlyfy/
+17 October 2026 · Current release 1.6.0 · https://tyclodd.github.io/manlyfy/
 
-## 1.4.1 video downloads and shared logo
+## 1.6.0 current validation
+
+- `npm run check`: all owned JavaScript syntax, local imports, unique HTML IDs and referenced controls pass; **51 tests pass**.
+- Real jsfeat optical flow on deterministic textured frames: translation, rotation, scale, delayed neural anchors, rapid reversals, occlusion, paused-media resumption, short missed detections and identity preservation pass.
+- Eight reordered face observations retain IDs. Crossing trajectories keep their design IDs. Expired/distant tracks get fresh IDs. These are spatial-geometry tests, not face recognition or real crowd footage.
+- Master access tests verify correct/incorrect tokens, persistence, disabled storage, leaving creator edition, and preservation of earned counts. No private master token is committed.
+- Real photo recovery decoders open JPEG, screenshot PNG, TIFF and HEIC fixtures into nonempty pixels. Corrupt data fails visibly. Gallery/Files provider fallback and EXIF handling pass.
+- Precise-export pipeline tests use injected codecs to verify every variable-timestamp source frame is awaited, 4K dimensions, 1080p option, original audio packet transfer, exactly three additional seconds, ending-free owner output, cancellation, tracker failure, encoder absence and resource cleanup. **They do not exercise a browser's real VideoEncoder/VideoDecoder.**
+- Actual bundled CPU face model on public NASA fixtures: 1 face in the portrait and 2 in a two-person composite. This used Node TensorFlow CPU tensors at 608-pixel detector input, about 10.2 s / 9.6 s in this container. It verifies weights and detection, not worker integration, GPU or phone performance.
+- Actual Mediabunny 1.61.6 demux/remux: locally generated 1-second H.264/AAC MP4, 12 video frames, 320×320; all 48 AAC packets copied through the same audio source/sink APIs. ffprobe decoded the resulting 9,846-byte M4A as AAC, 48 kHz mono, exactly 1 second. This verifies the real container/audio path, not browser video encoding.
+
+### Fast-motion comparison
+
+Run `node scripts/benchmark-motion.mjs`. Baseline is commit `4bd841119361142bc95c098b48cd2ec72f8ed20e` (1.5.0). The sequence is a **240×240 generated textured image**, not a person, with normalized known nose landmarks. It runs 36 source frames at timestamps 60 fps; motion is `x=44 sin(i f)`, `y=18 sin(0.6 i f)`. No neural anchors refresh during the sequence. This isolates the optical-flow/reacquisition change. CPU timings in this container are diagnostic and not phone frame rates.
+
+| Frequency f | Prior coverage | New coverage | New mean / p95 nose error |
+| --- | --- | --- | --- |
+| 0.1 | 36 / 36 | 36 / 36 | about 0.008 / 0.016 px |
+| 0.3 | 36 / 36 | 36 / 36 | about 0.008 / 0.014 px |
+| 0.6, rapid reversal | 0 / 36 | 36 / 36 | about 0.008 / 0.014 px |
+
+The rapid sequence moves up to about 26 pixels between frames. The new tracker uses coarse normalized correlation when ordinary LK loses too many features, then refines and checks the match backwards. The regression test requires all 36 frames present and less than 1 pixel nose error. It still hides overlays when no reliable match exists. This does not establish zero mistakes with motion blur, head yaw, covered noses or physical cameras.
+
+### Verification limits
+
+The supported Browser control skill is unavailable in this session, so no preview server or alternative browser automation was started. Current release browser rendering, WebCodecs encoding/decoding, hardware GPU inference, 60 fps camera capture, microphone permissions, native sharing, installation and Android/iOS behavior remain unverified. Prior browser screenshots and media below are **historical evidence for their named release**, not proof of current behavior. No zero-error or instantaneous-export claim is made.
+
+## 1.4.1 video downloads and shared logo (historical)
 
 The latest conversation review found two presentation gaps: video upload needed an explicit export action and persistent download, and the generator's MANLYFY card needed a single shared, readable logo. Both are published. The logo is a purple camera with a lens plaster carrying **star → airplane → star**; its airplane was redrawn for clarity at small sizes.
 

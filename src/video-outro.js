@@ -19,8 +19,8 @@ export function drawOutro(ctx,logo,elapsed){
  ctx.save();ctx.translate(w/2,cy);ctx.rotate(Math.sin(t*Math.PI*4)*.06*(1-t));ctx.shadowColor='#72508b44';ctx.shadowBlur=s*.03;ctx.shadowOffsetY=s*.012;ctx.drawImage(logo,-size/2,-size/2,size,size);ctx.restore();
  ctx.textAlign='center';ctx.textBaseline='middle';
  const titleY=cy+s*.29;ctx.globalAlpha=clamp((t-.12)*5,0,1);
- text(ctx,"IT’S MANLY NOW.",w/2,titleY,s*.07,w*.86);
- text(ctx,'MANLYFY',w/2,titleY+s*.085,s*.045,w*.8,'#8157a7');
+ text(ctx,'MANLYFY',w/2,titleY,s*.09,w*.86);
+ text(ctx,"IT’S MANLY NOW.",w/2,titleY+s*.085,s*.038,w*.8,'#8157a7');
  ctx.globalAlpha=clamp((t-.25)*4,0,1);text(ctx,'The Manliest Camera on Earth.',w/2,titleY+s*.15,s*.023,w*.84);
  text(ctx,'tyclodd.github.io/manlyfy',w/2,h-s*.065,s*.021,w*.84,'#715c80');ctx.restore();
 }
