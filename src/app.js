@@ -1,19 +1,21 @@
-import {progressAt,unlockPhoto,cleanCount} from './progress.js?v=1.3.2';
-import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.3.2';
-import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,recordingMime,formatTime,cameraError} from './core.js?v=1.3.2';
-import {drawBandage} from './render.js?v=1.3.2';
-import {FaceTracker} from './tracker.js?v=1.3.2';
-import {MotionTracker} from './motion.js?v=1.3.2';
-import {CameraClock} from './camera-clock.js?v=1.3.2';
-import {decodePhoto,photoSelection} from './photos.js?v=1.3.2';
-import {detectPhotoFaces} from './photo-tracker.js?v=1.3.2';
-import {startGesture,moveGesture} from './gestures.js?v=1.3.2';
-import {fingerprint,ratingFamily,manlinessScore,manlinessJoke} from './manliness.js?v=1.3.2';
-import {openVideoFile,seekVideo,originalAudio,suspendOriginalAudio} from './video-import.js?v=1.3.2';
+import {progressAt,unlockPhoto,cleanCount} from './progress.js?v=1.4.0';
+import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.4.0';
+import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,formatTime,cameraError} from './core.js?v=1.4.0';
+import {drawBandage} from './render.js?v=1.4.0';
+import {FaceTracker} from './tracker.js?v=1.4.0';
+import {MotionTracker} from './motion.js?v=1.4.0';
+import {CameraClock} from './camera-clock.js?v=1.4.0';
+import {decodePhoto,photoSelection} from './photos.js?v=1.4.0';
+import {detectPhotoFaces} from './photo-tracker.js?v=1.4.0';
+import {startGesture,moveGesture} from './gestures.js?v=1.4.0';
+import {fingerprint,ratingFamily,manlinessScore,manlinessJoke} from './manliness.js?v=1.4.0';
+import {openVideoFile,seekVideo,originalAudio,suspendOriginalAudio} from './video-import.js?v=1.4.0';
+import {playOutro,OUTRO_DURATION} from './video-outro.js?v=1.4.0';
+import {startVideoRecorder} from './video-recorder.js?v=1.4.0';
 const $=id=>document.getElementById(id);
 const stage=$('stage'),ctx=stage.getContext('2d',{alpha:false}),video=$('sourceVideo');
 const tracker=new FaceTracker(),motion=new MotionTracker(),images=new Map(),cameraClock=new CameraClock(video,time=>loop(time));
-let importedClip=null,processingClip=false;
+let importedClip=null,processingClip=false,outroActive=false,outroAdded=false,outroAbort=null,outroLogo=null,logoPromise=null;
 let design='classic',category='All patches',mode='photo',photo=null,live=false,stream=null,micStream=null,mirrored=false,facing='user';
 let patches=[],selected=null,compare=false,epoch=0,lastInfer=0,lastTracked=0,trackingHold=650,lastDraw=0,working=false;
 let recorder=null,recordStream=null,recording=false,chunks=[],recordBytes=0,recordStarted=0,resultBlob=null,resultUrl=null,photoUrl=null;
@@ -34,6 +36,7 @@ function dims(){const source=live?video:photo;return {source,sw:source?.videoWid
 function rect(){const{sw,sh}=dims();return containRect(sw,sh,stage.width,stage.height);}
 function resize(){const{source,sw,sh}=dims();if(!source)return;const size=outputSize(sw,sh,$('ratio').value,live?($('quality').value==='lite'?960:1280):2560);if(recording)return;stage.width=size.width;stage.height=size.height;render();}
 function render(){
+  if(outroActive)return;
   const now=performance.now();
   const{source,sw,sh}=dims();if(!source||live&&video.readyState<2)return;
   const r=containRect(sw,sh,stage.width,stage.height);ctx.fillStyle='#15151e';ctx.fillRect(0,0,stage.width,stage.height);
@@ -63,20 +66,26 @@ function updateControls(){
   $('audioOption').hidden=mode!=='video'||!!importedClip;$('clipControls').hidden=!importedClip;$('previewHead').hidden=!live;$('recordingBadge').hidden=!recording;
   $('flipBtn').disabled=!live||working||recording||!!importedClip;$('compareBtn').disabled=(!photo&&!live)||recording||working;
   $('editor').hidden=!photo||live||mode==='video';$('shutter').classList.toggle('video',mode==='video');$('shutter').classList.toggle('recording',recording);
-  $('shutter').disabled=working||micPending||(live&&mode==='video'&&!tracker.ready);
+  $('shutter').disabled=outroActive||working||micPending||(!recording&&live&&mode==='video'&&!tracker.ready);
   $('shutter').setAttribute('aria-label',recording?(processingClip?'Stop processing and save':'Stop recording'):!live?'Open camera':mode==='video'?(importedClip?'Apply filter to video':'Start recording'):'Take photo');
   $('shutterHint').textContent=recording?'TAP TO STOP & SAVE':!live?'TAP TO GET MANLY':mode==='video'?(importedClip?'TAP TO FILTER CLIP':'TAP TO RECORD'):'TAP TO SNAP';
   $('uploadBtn').setAttribute('aria-label',mode==='video'?'Upload video':'Upload photos');$('welcomeUpload').textContent=mode==='video'?'or choose a video ↗':'or choose photos ↗';
   $('stopCamera').textContent=importedClip?'Close clip':'Camera off';$('liveBadge').innerHTML='<i></i>'+(importedClip?'IMPORTED CLIP':'LIVE');
   for(const id of ['clipPlay','clipSeek','keepClipAudio'])$(id).disabled=working||recording;
   $('clipPlay').textContent=video.paused?'Play preview':'Pause preview';
+  $('videoOptions').hidden=mode!=='video';$('includeOutro').disabled=working||recording;
+  $('clipExportBar').hidden=!importedClip||recording;
+  $('createVideo').disabled=working||!tracker.ready;
+  $('videoProgressPanel').hidden=!recording;
+  $('videoSaveBar').hidden=mode!=='video'||!resultBlob||recording||live;
+  if(recording)updateVideoProgress();
   for(const id of ['photoMode','videoMode','ratio','groupToggle','quality','uploadBtn','roulette','demoBtn'])$(id).disabled=recording||working;
   $('audioToggle').disabled=recording||working||micPending;
   for(const id of ['savePhoto','quickSavePhoto','sharePhoto'])$(id).disabled=working||!photo;
   $('photoSaveBar').hidden=!photo||live||mode!=='photo';$('cancelDetection').hidden=!working||!photo||live;
   $('photoPrev').disabled=working||queueIndex<=0;$('photoNext').disabled=working||queueIndex>=photoQueue.length-1;
   $('chooseMorePhotos').disabled=working||recording;
-  $('stopCamera').disabled=working; // Always available during recording.
+  $('stopCamera').disabled=working||outroActive;
   document.querySelectorAll('.patch-card,.quick-patch,.category').forEach(b=>b.disabled=recording);
   for(const id of ['redetect','addPatch','mixGroup'])$(id).disabled=working||recording||!photo;
   $('noseSelect').disabled=working||!patches.length;
@@ -133,7 +142,7 @@ function creditPhoto(){
   $('rewardDetails').hidden=false;$('rewardDetails').textContent=earned.length===1?'New: '+earned[0].name+' ↗':earned.length+' new patches ↗';toast('Unlocked! '+earned.map(d=>d.name).join(', ')+'.');
  }else toast(`Photo ${photoCount}. ${after.next?after.next.photos-photoCount+' to your next unlock.':'Legendary status maintained.'}`);
 }
-function savePref(){try{localStorage.setItem('manlyfy-prefs',JSON.stringify({design,ratio:$('ratio').value,quality:$('quality').value,groupLive:$('groupToggle').checked}));}catch{}}
+function savePref(){try{localStorage.setItem('manlyfy-prefs',JSON.stringify({design,ratio:$('ratio').value,quality:$('quality').value,groupLive:$('groupToggle').checked,videoEnding:$('includeOutro').checked}));}catch{}}
 async function waitIdle(){await tracker.whenIdle();}
 async function detectPhoto(token=epoch){
   if(!photo)return;busy(true,'Finding every magnificent nose…');
@@ -189,7 +198,7 @@ async function enableMic(){
 }
 function frozenSource(){if(video.readyState<2||!video.videoWidth)return null;const c=document.createElement('canvas');const s=Math.min(1,2560/Math.max(video.videoWidth,video.videoHeight));c.width=Math.round(video.videoWidth*s);c.height=Math.round(video.videoHeight*s);c.getContext('2d').drawImage(video,0,0,c.width,c.height);return c;}
 function stopLive(preserve=true){
-  if(recording)stopRecording();if(live&&preserve){photo=frozenSource()||photo;progressEligible=false;photoCredited=false;}
+  if(recording)stopRecording({immediate:true});if(live&&preserve){photo=frozenSource()||photo;progressEligible=false;photoCredited=false;}
   live=false;touches.clear();drag=null;motion.reset();motionReady=false;epoch++;clearTimeout(testRaf);testRaf=0;cameraClock.stop();stream?.getTracks().forEach(t=>t.stop());stream=null;stopMic();video.pause();video.srcObject=null;if(importedClip){URL.revokeObjectURL(importedClip.url);importedClip=null;video.removeAttribute('src');video.load();suspendOriginalAudio(video);}video.muted=true;video.autoplay=true;processingClip=false;
   if(photo){if(!rating)rate();showMedia();resize();rebuildNoses();render();faceStatus('Camera off · media stays on your device');}else{stage.hidden=true;$('welcome').hidden=false;$('viewfinder').classList.remove('has-media');$('faceStatus').hidden=true;}
   updateControls();
@@ -223,11 +232,11 @@ async function startCamera(nextFacing=facing){
   }catch(e){if(token===epoch){stream?.getTracks().forEach(t=>t.stop());stream=null;live=false;busy(false);stopLive(false);notice(cameraError(e));}}
 }
 async function importVideo(file){
- if(recording||working)return;clearPhotoQueue();stopLive(false);photo=null;rating=null;patches=[];selected=null;mode='video';mirrored=false;notice();busy(true,'Opening your video…');const token=++epoch;
+ if(recording||working)return;clearPhotoQueue();stopLive(false);photo=null;rating=null;patches=[];selected=null;mode='video';mirrored=false;clearVideoResult();notice();busy(true,'Opening your video…');const token=++epoch;
  try{
   const clip=await openVideoFile(video,file);if(token!==epoch){URL.revokeObjectURL(clip.url);return;}importedClip=clip;live=true;motion.reset();motionReady=false;motion.maxEdge=$('quality').value==='lite'?256:320;lastInfer=0;lastMotion=0;nextMotion=0;lastTracked=0;testFrames=0;flowCount=0;renderCount=0;metricStart=performance.now();tracker.resetVideo();showMedia();resize();$('clipName').textContent=clip.name;$('clipSeek').max=clip.duration;$('clipSeek').value=0;$('clipDuration').textContent='00:00 / '+formatTime(clip.duration*1000);
   busy(true,'Preparing the first frame…');await Promise.all([tracker.init(),motion.init()]);await tracker.whenIdle();if(token!==epoch)return;motionReady=true;await prepareClipFrame(token);if(token!==epoch)return;busy(false);
-  notice('Clip ready. Pick a plaster, then tap the shutter to apply it. Processing runs in real time; keep this tab open. Up to 3 minutes.');$('viewfinder').scrollIntoView({block:'center',behavior:'smooth'});
+  notice('Preview ready. Pick your plaster, then tap Create filtered video. The whole clip processes in real time; keep this tab open.');$('viewfinder').scrollIntoView({block:'center',behavior:'smooth'});
  }catch(e){if(token!==epoch)return;live=false;busy(false);stopLive(false);notice(e.message);toast(e.message);}
 }
 async function prepareClipFrame(token){
@@ -249,7 +258,7 @@ function updateLivePatches(landmarks,time){
   faceStatus(patches.length?`${patches.length} ${patches.length===1?'nose':'noses'} locked · ${DESIGNS.find(d=>d.id===design).name}`:'No face found · face the camera',!patches.length);
 }
 function loop(time){
-  if(!live)return;
+  if(!live||outroActive)return;
   const flowInterval=1000/($('quality').value==='lite'?20:30);
   if(motionReady&&($('quality').value!=='lite'||time>=nextMotion)&&motion.tick(video,time)){
     nextMotion=nextMotion?nextMotion+flowInterval:time+flowInterval;if(nextMotion<time-flowInterval)nextMotion=time+flowInterval;lastMotion=time;updateLivePatches(motion.landmarks(),time);if(motion.hasFaces)flowCount++;
@@ -263,7 +272,7 @@ function loop(time){
     // when the worker finishes, so a slow scan never pulls the nose into the past.
     const source=motionReady?motion.canvas:video;
     tracker.detect(source,'VIDEO',$('groupToggle').checked?4:1,$('quality').value==='lite'?480:720).then(found=>{
-      if(!live||token!==epoch||found===null)return;testFrames++;
+      if(!live||outroActive||token!==epoch||found===null)return;testFrames++;
       if(motionReady){motion.seed(found,frameId);updateLivePatches(motion.landmarks(),performance.now());}
       else updateLivePatches(found,performance.now());
       trackingHold=motionReady?350:1000;render();
@@ -274,33 +283,74 @@ function loop(time){
     $('notice').textContent=`TEST CAMERA · ${tracker.backend} · ${patches.length} patches · ${testFrames} model scans · ${(flowCount/seconds).toFixed(1)} tracked motion fps · ${(renderCount/seconds).toFixed(1)} preview fps · ${motion.cost.toFixed(1)} ms motion · ${motionReady?'flow on':'flow unavailable'} · synthetic media only`;
   }
   if(importedClip){$('clipSeek').value=video.currentTime;$('clipDuration').textContent=formatTime(video.currentTime*1000)+' / '+formatTime(importedClip.duration*1000);}
-  if(recording){const elapsed=performance.now()-recordStarted;$('timer').textContent=formatTime(elapsed);if(elapsed>=180000){toast('Three glorious minutes. Saving your clip.');stopRecording();}}
+  if(recording){updateVideoProgress();const elapsed=performance.now()-recordStarted;$('timer').textContent=formatTime(elapsed);if(elapsed>=180000){toast('Three glorious minutes. Saving your clip.');stopRecording();}}
 }
 
 async function takePhoto(){
   if(!live){startCamera();return;}const snapshot=frozenSource();if(!snapshot)return;photo=snapshot;stopLive(false);photo=snapshot;progressEligible=true;photoCredited=false;mode='photo';$('realBandage').checked=false;rate();showMedia();resize();rebuildNoses();updateControls();$('flash').classList.remove('pop');void $('flash').offsetWidth;$('flash').classList.add('pop');await detectPhoto(epoch);creditPhoto();
 }
-async function startRecording(){
-  if(!live){startCamera();return;}
-  if(!tracker.ready){notice('Wait for the face tracker to load before recording.');return;}
-  if(!window.MediaRecorder||!stage.captureStream){notice('Video recording is unavailable in this browser. Try current Android Chrome, or take a photo instead.');return;}
-  compare=false;$('compareBtn').setAttribute('aria-pressed','false');render();chunks=[];recordBytes=0;recordFailed=false;
-  try{
-    const capture=stage.captureStream(30);let audio=[];if(importedClip&&$('keepClipAudio').checked)audio=await originalAudio(video);else if(!importedClip&&$('audioToggle').checked)audio=micStream?.getAudioTracks().filter(t=>t.readyState==='live').map(t=>t.clone())||[];
-    recordStream=new MediaStream([...capture.getVideoTracks(),...audio]);
-    const mime=recordingMime(MediaRecorder,!!audio.length),options={videoBitsPerSecond:$('quality').value==='lite'?2500000:4500000};if(mime)options.mimeType=mime;
-    recorder=new MediaRecorder(recordStream,options);
-    recorder.ondataavailable=e=>{if(e.data.size){chunks.push(e.data);recordBytes+=e.data.size;if(recordBytes>100*1024*1024){toast('Saving this mighty clip before phone memory fills up.');stopRecording();}}};
-    recorder.onerror=e=>{recordFailed=true;notice('The browser interrupted recording. Any available clip will be shown. Try a shorter clip or Lite mode.');stopRecording();};
-    recorder.onstop=()=>{
-      const mimeType=recorder.mimeType||mime||'video/webm';const elapsed=performance.now()-recordStarted;recording=false;clearInterval(recordTimer);recordStream?.getTracks().forEach(t=>t.stop());recordStream=null;
-      if(chunks.length){resultBlob=new Blob(chunks,{type:mimeType});chunks=[];if(resultUrl)URL.revokeObjectURL(resultUrl);resultUrl=URL.createObjectURL(resultBlob);$('resultVideo').src=resultUrl;$('resultInfo').textContent=`${formatTime(elapsed)} · ${(resultBlob.size/1048576).toFixed(1)} MB · ${mimeType.includes('mp4')?'MP4':'WebM'} · ${audio.length?'with audio':'silent'}${recordFailed?' · interrupted':''}`;stopLive(true);busy(false);$('resultDialog').showModal();}else{notice('No video frames were recorded. Keep the tab visible and try again.');updateControls();}
-    };
-    recorder.start(1000);recording=true;recordStarted=performance.now();if(importedClip){await video.play();cameraClock.start();}$('timer').textContent='00:00';updateControls();recordTimer=setInterval(()=>{if(recording&&performance.now()-recordStarted>=180000)stopRecording();},1000);
-    toast(processingClip?'Filtering your clip. Keep this tab open.':audio.length?'Recording. Make some MANLY noise.':'Recording silently. Maximum MANLY, minimum noise.');
-  }catch(e){if(recorder&&recorder.state!=='inactive'){recorder.onstop=null;recorder.stop();}recording=false;processingClip=false;clearInterval(recordTimer);recordStream?.getTracks().forEach(t=>t.stop());recordStream=null;video.pause();notice('This browser could not start the video recorder. Try another browser, or take a photo.');updateControls();}
+async function ensureOutroLogo(){
+ if(outroLogo)return outroLogo;
+ if(!logoPromise){const img=new Image();img.src='assets/icons/icon.svg';logoPromise=img.decode().then(()=>outroLogo=img).catch(error=>{logoPromise=null;throw error;});}return logoPromise;
 }
-function stopRecording(){if(recorder&&recorder.state!=='inactive'){recorder.stop();$('shutter').disabled=true;$('shutterHint').textContent='SAVING YOUR MANLY…';}}
+function clearVideoResult(){
+ $('resultVideo').pause();$('resultDialog').close();$('resultVideo').removeAttribute('src');$('resultVideo').load();
+ if(resultUrl)URL.revokeObjectURL(resultUrl);resultUrl=null;resultBlob=null;
+ for(const id of ['saveVideo','quickSaveVideo'])$(id).removeAttribute('href');$('videoSaveBar').hidden=true;
+}
+function updateVideoProgress(endingElapsed=0){
+ const ending=$('includeOutro').checked?OUTRO_DURATION:0,total=(importedClip?.duration||0)*1000+ending;
+ if(outroActive){$('videoProgressText').textContent='Adding your 3-second MANLYFY ending…';$('videoProgressTime').textContent=formatTime(endingElapsed)+' / 00:03';}
+ else{$('videoProgressText').textContent=importedClip?'Creating your filtered video…':'Recording your MANLY video…';$('videoProgressTime').textContent=importedClip?formatTime(video.currentTime*1000)+' / '+formatTime(total):formatTime(performance.now()-recordStarted);}
+ $('videoProgress').max=importedClip?total:1;
+ if(importedClip)$('videoProgress').value=outroActive?importedClip.duration*1000+endingElapsed:video.currentTime*1000;else $('videoProgress').removeAttribute('value');
+}
+async function startRecording(){
+ if(!live){startCamera();return;}
+ if(recording||outroActive)return;
+ if(!tracker.ready){notice('Wait for the face tracker to load before recording.');return;}
+ if(!window.MediaRecorder||!stage.captureStream){notice('Video export is unavailable in this browser. Open this page directly in current Chrome or Safari and try again.');return;}
+ const token=epoch;busy(true,'Starting your video export…');compare=false;$('compareBtn').setAttribute('aria-pressed','false');render();chunks=[];recordBytes=0;recordFailed=false;outroAdded=false;
+ try{
+  if($('includeOutro').checked)try{await ensureOutroLogo();}catch{$('includeOutro').checked=false;notice('The logo could not load. Your video can still be saved without the ending.');}
+  if(token!==epoch||!live){busy(false);return;}
+  const capture=stage.captureStream(30);let audio=[];if(importedClip&&$('keepClipAudio').checked)audio=await originalAudio(video);else if(!importedClip&&$('audioToggle').checked)audio=micStream?.getAudioTracks().filter(t=>t.readyState==='live').map(t=>t.clone())||[];
+  if(token!==epoch||!live){capture.getTracks().forEach(t=>t.stop());audio.forEach(t=>t.stop());busy(false);return;}
+  recordStream=new MediaStream([...capture.getVideoTracks(),...audio]);
+  const activeRecorder=startVideoRecorder(recordStream,{audio:!!audio.length,videoBitsPerSecond:$('quality').value==='lite'?2500000:4500000});recorder=activeRecorder;
+  recorder.ondataavailable=e=>{if(e.data.size){chunks.push(e.data);recordBytes+=e.data.size;if(recordBytes>100*1024*1024){toast('Saving this mighty clip before phone memory fills up.');stopRecording({immediate:true});}}};
+  recorder.onerror=()=>{recordFailed=true;notice('The browser interrupted export. Any available clip will be kept below. Try a shorter clip or Lite mode.');stopRecording({immediate:true});};
+  recorder.onstop=()=>{
+   const mimeType=activeRecorder.mimeType||'video/webm',elapsed=performance.now()-recordStarted;outroAbort?.abort();outroAbort=null;outroActive=false;recording=false;clearInterval(recordTimer);recordStream?.getTracks().forEach(t=>t.stop());recordStream=null;
+   if(chunks.length){
+    resultBlob=new Blob(chunks,{type:mimeType});chunks=[];if(resultUrl)URL.revokeObjectURL(resultUrl);resultUrl=URL.createObjectURL(resultBlob);$('resultVideo').src=resultUrl;
+    const name=fileName(mimeType.includes('mp4')?'mp4':'webm');for(const id of ['saveVideo','quickSaveVideo']){$(id).href=resultUrl;$(id).download=name;}
+    const info=`${formatTime(elapsed)} · ${(resultBlob.size/1048576).toFixed(1)} MB · ${mimeType.includes('mp4')?'MP4':'WebM'} · ${audio.length?'with audio':'silent'}${outroAdded?' · 3s MANLYFY ending':''}${recordFailed?' · interrupted':''}`;
+    $('resultInfo').textContent=info;$('inlineResultInfo').textContent=info;stopLive(true);busy(false);notice('Your filtered video is ready. Tap Download video below.');toast('MANLYFICATION complete. Your video is ready to download.');$('videoSaveBar').scrollIntoView({block:'center',behavior:'smooth'});
+   }else{notice('No video frames were recorded. Keep the tab visible and try again.');updateControls();}
+  };
+  recording=true;recordStarted=performance.now();if(importedClip){motion.resumePaused(performance.now());lastTracked=performance.now();await video.play();cameraClock.start();}
+  $('timer').textContent='00:00';busy(false);recordTimer=setInterval(()=>{if(recording&&!outroActive&&performance.now()-recordStarted>=180000)stopRecording();},1000);
+  toast(processingClip?'Creating your video. Download appears as soon as it is ready.':audio.length?'Recording. Make some MANLY noise.':'Recording silently. Maximum MANLY, minimum noise.');
+ }catch(e){
+  if(recorder&&recorder.state!=='inactive'){recorder.onstop=null;recorder.stop();}recording=false;processingClip=false;clearInterval(recordTimer);recordStream?.getTracks().forEach(t=>t.stop());recordStream=null;video.pause();
+  notice('This browser could not start video export. Try a shorter clip in the full Chrome or Safari browser, rather than an in-app browser.');busy(false);
+ }
+}
+function stopRecorderNow(){
+ outroAbort?.abort();outroAbort=null;outroActive=false;
+ if(recorder&&recorder.state!=='inactive'){recorder.stop();$('shutter').disabled=true;$('shutterHint').textContent='SAVING YOUR MANLY…';}
+}
+async function stopRecording({immediate=false}={}){
+ if(!recorder||recorder.state==='inactive')return;
+ if(immediate){stopRecorderNow();return;}if(outroActive)return;
+ if($('includeOutro').checked&&outroLogo&&!recordFailed&&!document.hidden){
+  outroActive=true;cameraClock.stop();video.pause();clearInterval(recordTimer);recordStream?.getAudioTracks().forEach(track=>track.enabled=false);const controller=new AbortController();outroAbort=controller;updateControls();$('shutterHint').textContent='ADDING YOUR MANLY ENDING…';
+  const complete=await playOutro(ctx,outroLogo,{signal:controller.signal,onProgress:elapsed=>{updateVideoProgress(elapsed);recordStream?.getVideoTracks()[0]?.requestFrame?.();}});
+  if(!complete){if(!controller.signal.aborted)notice('The ending was interrupted. Your processed video can still be downloaded.');stopRecorderNow();return;}outroAdded=true;outroActive=false;outroAbort=null;
+ }
+ stopRecorderNow();
+}
 async function photoBlob(){if(!photo)throw new Error('Take or upload a photo first.');const original=compare;compare=false;render();const blob=await new Promise(resolve=>stage.toBlob(resolve,'image/png'));compare=original;render();if(!blob)throw new Error('The photo could not be exported. Try a smaller image.');creditPhoto();return blob;}
 function fileName(type){return`MANLYFY-${new Date().toISOString().replace(/[:.]/g,'-')}.${type}`;}
 function downloadBlob(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);toast('Saved with 100% MANLY. 0% watermark.');}
@@ -308,7 +358,12 @@ async function shareBlob(blob,name){const file=new File([blob],name,{type:blob.t
 function setMode(value){if(recording||working)return;if(value==='photo'&&importedClip)stopLive(true);mode=value;compare=false;$('compareBtn').setAttribute('aria-pressed','false');if(mode==='photo')stopMic();else if(live&&$('audioToggle').checked&&!micStream)enableMic();updateControls();render();if(mode==='video'&&!window.MediaRecorder)notice('This browser does not support live video recording. Photo mode is available.');}
 // Collection and UI events.
 $('photoMode').onclick=()=>setMode('photo');$('videoMode').onclick=()=>setMode('video');
-$('enableCamera').onclick=()=>startCamera();$('retake').onclick=()=>startCamera();$('stopCamera').onclick=()=>stopLive();
+$('enableCamera').onclick=()=>startCamera();$('retake').onclick=()=>startCamera();$('stopCamera').onclick=()=>recording?stopRecording():stopLive();
+$('createVideo').onclick=()=>processImportedClip();
+$('includeOutro').onchange=savePref;
+$('previewVideo').onclick=()=>{if(resultBlob)$('resultDialog').showModal();};
+$('shareVideoInline').onclick=()=>resultBlob&&shareBlob(resultBlob,fileName(resultBlob.type.includes('mp4')?'mp4':'webm'));
+for(const id of ['quickSaveVideo','saveVideo'])$(id).onclick=()=>toast('Your MANLY video download is starting.');
 $('shutter').onclick=()=>recording?stopRecording():mode==='photo'?takePhoto():importedClip?processImportedClip():startRecording();
 $('flipBtn').onclick=()=>startCamera(facing==='user'?'environment':'user');
 for(const id of ['uploadBtn','welcomeUpload'])$(id).onclick=()=>(mode==='video'?$('videoFileInput'):$('fileInput')).click();$('chooseMorePhotos').onclick=()=>$('fileInput').click();
@@ -336,7 +391,6 @@ $('rerate').onclick=newPunchline;$('rankNewJoke').onclick=newPunchline;$('realBa
 $('rankChoosePhoto').onclick=()=>$('fileInput').click();$('rankAddPatch').onclick=()=>{if(!photo)return;if(!patches.length)$('addPatch').click();$('viewfinder').scrollIntoView({block:'center',behavior:'smooth'});};
 for(const id of ['savePhoto','quickSavePhoto'])$(id).onclick=async()=>{try{downloadBlob(await photoBlob(),fileName('png'));}catch(e){notice(e.message);toast(e.message);}};
 $('sharePhoto').onclick=async()=>{try{await shareBlob(await photoBlob(),fileName('png'));}catch(e){notice(e.message);}};
-$('saveVideo').onclick=()=>{if(resultBlob)downloadBlob(resultBlob,fileName(resultBlob.type.includes('mp4')?'mp4':'webm'));};
 $('shareVideo').onclick=()=>{if(resultBlob)shareBlob(resultBlob,fileName(resultBlob.type.includes('mp4')?'mp4':'webm'));};
 // Drag, pinch and twist use source coordinates; the editing outline is DOM-only
 // and is never painted into photo/video exports.
@@ -378,8 +432,8 @@ $('installBtn').onclick=async()=>{if(deferredInstall){await deferredInstall.prom
 window.addEventListener('appinstalled',()=>toast('Installed. Your nose has a home screen now.'));
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&live){stopLive(true);notice('Camera stopped because you left the tab. Your media stays here. Reopen the camera to continue.');}});
 window.addEventListener('pagehide',()=>{stopLive(false);tracker.dispose();});
-try{const p=JSON.parse(localStorage.getItem('manlyfy-prefs')||'{}');if(DESIGNS.some(d=>d.id===p.design))design=p.design;if(['original','square','vertical'].includes(p.ratio))$('ratio').value=p.ratio;if(['lite','balanced'].includes(p.quality))$('quality').value=p.quality;if(typeof p.groupLive==='boolean')$('groupToggle').checked=p.groupLive;}catch{}
+try{const p=JSON.parse(localStorage.getItem('manlyfy-prefs')||'{}');if(DESIGNS.some(d=>d.id===p.design))design=p.design;if(['original','square','vertical'].includes(p.ratio))$('ratio').value=p.ratio;if(['lite','balanced'].includes(p.quality))$('quality').value=p.quality;if(typeof p.groupLive==='boolean')$('groupToggle').checked=p.groupLive;if(typeof p.videoEnding==='boolean')$('includeOutro').checked=p.videoEnding;}catch{}
 if(!canUse(design))design='classic';
 if(testCamera){const n=document.createElement('p');n.className='notice';n.textContent='VERIFICATION MODE · Simulated camera and audio only. Open the normal app URL for your real camera.';document.querySelector('main').prepend(n);}
 buildCollection();ensureDesign(design).then(()=>selectDesign(design,false));updateControls();
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.3.2',{updateViaCache:'none'}).catch(()=>{}));
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.4.0',{updateViaCache:'none'}).catch(()=>{}));
