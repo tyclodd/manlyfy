@@ -1,8 +1,20 @@
 # MANLYFY verification record
 
-17 October 2026 · Current release 1.6.1 · https://tyclodd.github.io/manlyfy/
+17 October 2026 · Current release 1.7.0 · https://tyclodd.github.io/manlyfy/
 
-## 1.6.1 current validation
+## 1.7.0 current validation
+
+- `npm run check`: all owned JavaScript syntax, local import and HTML control checks pass; **63 tests pass**.
+- Uploaded videos now start processing automatically. The progress indicator begins at 0%, uses a monotonic timeline percentage capped at 97% while encoding, moves to 99% for finalization, and shows 100% only when the final Blob exists. It measures completed video time, not an estimated time remaining. A clearly labelled partial recording never claims 100% completion.
+- Presentation tests use the actual HTML control IDs and a lightweight media/DOM test surface. They verify that the finished Blob URL feeds both the inline video and the download immediately beneath it, tapping the overlay calls playback, pausing restores the tap target, changing modes pauses hidden playback, and a new upload removes stale downloads. These tests do **not** establish native browser playback or responsive layout.
+- File-opening lifecycle checks verify cancellation, rejection before a result is exposed, and that cancelling an old import cannot clear a newly selected video. Real codecs and browser file decoding remain covered only by their separately stated evidence below.
+- Actual bundled jsfeat optical flow passes rapid-reversal, delayed-anchor, roll/scale and occlusion tests. The added moving textured-image sequence injects alternating neural-placement noise while reversing rapidly; current-frame fusion reduces total nose error by more than 20% compared with unfiltered detections, with less than 1.5 px instantaneous error on the 240×240 fixture. This is a deterministic synthetic test, not a human-head or phone benchmark.
+- A missed neural observation can remain visible for at most 100 ms live / 120 ms precise export, only if enough image features still track reliably. Tests verify movement, expiry and rejection of full visual occlusion. Large neural corrections and unreliable flow bypass blending.
+- The offline precise exporter now combines a fresh scan of every source frame with 640-pixel motion tracking, instead of assigning each scan independently. Source timestamps, encoder selection, original-audio transfer, 4K constraints, cancellation and three-second endings retain their pipeline checks.
+
+No current browser or physical-device QA is claimed. The supported Browser control skill is unavailable in this session, so no alternative browser automation or preview server was started. Current WebCodecs encoding/decoding, real camera/microphone behavior, native downloads/sharing, GPU inference, mobile layout and installation remain unverified. Historical screenshots and browser checks below apply to their named releases.
+
+## 1.6.1 validation (previous release)
 
 A final source review added an explicit Style from start action after seeking. Individual video styles are configured on the initial frame, so preview-only track IDs cannot silently replace initial export IDs. Global Everyone changes still work from any preview position.
 

@@ -27,7 +27,7 @@ export async function detectPhotoFaces(tracker,source,{onProgress=()=>{},cancell
  // Rotation fallback runs once on the whole photo, not on every empty crop.
  if(!all.length&&!cancelled()){onProgress('Checking rotated faces…');const rotated=await tracker.detect(source,'IMAGE',8,1280,{rotationSearch:true,inputSize:608,scoreThreshold:.35});distinct(all,rotated||[],width,height);}
  if(!all.length&&!cancelled()&&!tracker.backend.startsWith('CPU')){
-  onProgress('Trying another local face detector…');const {FaceTracker}=await import('./tracker.js?v=1.6.1');const fallback=new FaceTracker({forceCpu:true});
+  onProgress('Trying another local face detector…');const {FaceTracker}=await import('./tracker.js?v=1.7.0');const fallback=new FaceTracker({forceCpu:true});
   try{return await detectPhotoFaces(fallback,source,{onProgress,cancelled});}finally{fallback.dispose();}
  }
  return cancelled()?null:all;

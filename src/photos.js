@@ -60,7 +60,7 @@ async function bitmapPhoto(blob){
 }
 function compatibilityPixels(buffer,mime){return new Promise((resolve,reject)=>{
  let worker,timer;const finish=(error,result)=>{clearTimeout(timer);worker?.terminate();error?reject(error):resolve(result);};
- try{worker=new Worker(new URL('./photo-worker.js?v=1.6.1',import.meta.url));worker.onmessage=e=>e.data.error?finish(new Error(e.data.error)):finish(null,e.data);worker.onerror=()=>finish(new Error('The local picture converter could not load. Reconnect and try again.'));timer=setTimeout(()=>finish(new Error('Local picture conversion took too long. Try a smaller copy.')),45000);worker.postMessage({buffer,mime},[buffer]);}catch(error){finish(error);}
+ try{worker=new Worker(new URL('./photo-worker.js?v=1.7.0',import.meta.url));worker.onmessage=e=>e.data.error?finish(new Error(e.data.error)):finish(null,e.data);worker.onerror=()=>finish(new Error('The local picture converter could not load. Reconnect and try again.'));timer=setTimeout(()=>finish(new Error('Local picture conversion took too long. Try a smaller copy.')),45000);worker.postMessage({buffer,mime},[buffer]);}catch(error){finish(error);}
 });}
 function pixelsCanvas({width,height,rgba,orientation=1}){
  const data=new Uint8ClampedArray(rgba),swap=orientation>=5,c=sizeCanvas(swap?height:width,swap?width:height),raw=document.createElement('canvas');raw.width=width;raw.height=height;

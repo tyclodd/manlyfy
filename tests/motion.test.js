@@ -54,3 +54,23 @@ test('a briefly missed neural detection hides the overlay then recovers its orig
  frame=tracker.push(image(),width,height,68);tracker.seed([points()],frame.id);assert.equal(tracker.landmarks()[0].trackId,id);
  tracker.resumePaused(10000);frame=tracker.push(image(),width,height,10034);tracker.seed([points()],frame.id);assert.equal(tracker.landmarks()[0].trackId,id);
 });
+test('enhanced tracking bridges a brief model miss only while validated image motion remains reliable',()=>{
+ const tracker=new MotionTracker({library});let frame=tracker.push(image(),width,height,0);tracker.seed([points()],frame.id);const id=tracker.landmarks()[0].trackId;
+ const m={a:1,b:0,x:2,y:1};frame=tracker.push(image(m),width,height,34);tracker.seed([],frame.id,{stabilize:true,bridgeMs:120});assert.equal(tracker.landmarks().length,1);assert.equal(tracker.landmarks()[0].trackId,id);assert.ok(error(tracker.landmarks()[0],m)<1);
+ tracker.push(image(m),width,height,100);assert.equal(tracker.landmarks().length,1);tracker.push(image(m),width,height,133);assert.equal(tracker.landmarks().length,0,'a bridged detection must expire on time');
+});
+test('a full visual occlusion cannot be hidden by the short neural-dropout bridge',()=>{
+ const tracker=new MotionTracker({library});let frame=tracker.push(image(),width,height,0);tracker.seed([points()],frame.id);frame=tracker.push(new Uint8Array(width*height),width,height,34);tracker.seed([],frame.id,{stabilize:true,bridgeMs:120});assert.equal(tracker.landmarks().length,0);
+});
+test('fusion reduces noisy model placement through rapid reversals without delaying the actual image motion',()=>{
+ const strict=new MotionTracker({library}),fused=new MotionTracker({library});
+ for(const tracker of [strict,fused]){const frame=tracker.push(image(),width,height,0);tracker.seed([points()],frame.id);}
+ let rawError=0,fusedError=0;
+ for(let i=1;i<=36;i++){
+  const m={a:1,b:0,x:Math.sin(i*.6)*44,y:Math.sin(i*.36)*18},pixels=image(m),jitter=(i%2?1:-1)*.004;
+  const observed=points().map(p=>{if(!p)return p;const q=transform({x:p.x*width,y:p.y*height},m);return{x:q.x/width+jitter,y:q.y/height+jitter*.5};});
+  for(const tracker of [strict,fused]){const frame=tracker.push(pixels,width,height,i*1000/60);tracker.seed([observed],frame.id,{stabilize:tracker===fused});assert.equal(tracker.faces.length,1);}
+  rawError+=error(strict.landmarks()[0],m);fusedError+=error(fused.landmarks()[0],m);assert.ok(error(fused.landmarks()[0],m)<1.5,'placement stays on the current fast-moving image');
+ }
+ assert.ok(fusedError<rawError*.8,'motion fusion reduces model jitter across the whole moving sequence');
+});

@@ -1,6 +1,6 @@
 # MANLYFY 💪🩹
 
-**Release 1.6.1:** faster live tracking with coarse fast-motion recovery, separate per-face designs for up to eight detected video faces, private creator access, frame-by-frame precise uploaded-video export, original dimensions up to 4K, and branded three-second endings. Photo imports preserve decoded resolution up to 8192 px / 32 MP. See [requirements audit](docs/REQUIREMENTS-AUDIT.md) and [current verification and limits](docs/TESTING.md). No perfect-tracking guarantee is made.
+**Release 1.7.0:** automatic uploaded-video processing with a 0–100% indicator, tap-to-play in the main preview, a large DOWNLOAD VIDEO button directly underneath, and an Edit designs & create again action. Current-frame motion fusion reduces detector jitter, with brief confidence-checked coverage for missed detections. Includes individual designs for up to eight tracked faces, creator access, frame-by-frame export up to 4K and three-second branded endings. Photo imports preserve decoded resolution up to 8192 px / 32 MP. See [requirements audit](docs/REQUIREMENTS-AUDIT.md) and [current verification and limits](docs/TESTING.md). No perfect-tracking guarantee is made.
 
 
 **The Manliest Camera on Earth.** A free, browser-local photo and video nose-plaster camera.
@@ -11,7 +11,7 @@ App: https://tyclodd.github.io/manlyfy/
 
 ## Features implemented
 
-- Existing video uploads: preview and seek, then use the explicit Create filtered video button. Progress leads directly to a persistent, one-tap Download video link, with optional original audio (one clip, up to 3 minutes / 150 MB).
+- Existing video uploads process automatically with the selected design. Visible progress starts at 0% and reaches 100% only after the file is complete. Tap the finished video in the main preview to play it; a full-width DOWNLOAD VIDEO link is directly underneath. Edit designs & create again restores preview/seek and per-face styling. Original audio is optional (one clip, up to 3 minutes / 150 MB).
 - Three-second animated MANLYFY logo/name/tagline ending on public imported-video exports. Creator edition can disable it. Live recording retains an ending toggle. The ending is permanently encoded after the clip.
 - Local photo upload (up to 10 selected photos), camera capture, higher-resolution/crop scans for smaller faces, and group photos (up to 8 faces). Navigation retains per-photo edits without decoding the entire batch into memory.
 - Drag, pinch to resize, twist to rotate, add and remove individual plasters; before/after comparison. One-tap Save photo sits beside the preview, with no reward modal interrupting the download.
@@ -41,6 +41,8 @@ Third-party runtime assets are pinned to `@mediapipe/tasks-vision` **0.10.32** a
 - `src/face-worker.js`, `src/tracker.js`: worker-first MediaPipe inference with automatic browser-canvas and CPU-only compatibility paths, one in-flight scan and timeouts. Single-face camera mode is the default; photos and imported videos always support up to 8 faces.
 - `src/cpu-worker.js`, `src/cpu-tracker.js`: CPU-only face-api inference in an OffscreenCanvas worker using RGB tensors, with a main-thread fallback for older browsers. No identity models.
 - `src/motion.js`: sparse Lucas–Kanade optical flow follows image features on decoded frames, targeting up to 60 updates/s in Precision and 30 in Lite. Four-level pyramids and coarse normalized-correlation recovery handle rapid translation before subpixel LK refinement and backward checking. It buffers up to 4 seconds of small grayscale frames and replays a delayed neural anchor to the current frame. The preview is never frozen to an old CPU scan. Confidence failures hide the overlay and await reacquisition. All frame buffers stay in memory; motion history is cleared when the camera stops.
+- `src/video-ui.js`: shared percentage, inline playback and download presentation for both export methods; completed and partial files are distinguished.
+- `src/tracking-fusion.js`: blends reliable current-frame optical flow with small neural corrections; large corrections apply immediately. Missed detections bridge for at most 100 ms live / 120 ms precise export while image motion remains reliable.
 - `src/video-export.js`: WebCodecs-based frame-by-frame processing using a local pinned Mediabunny module, native-timestamp video encoding, original-audio packet copying, cancellation, 4K/1080p/720p support and a timestamped ending.
 - `src/access.js`: private fragment-token master access, local persistence and public token digest only.
 - `src/face-identity.js`: minimum-cost spatial track matching and velocity prediction for per-face design keys, without face recognition.
@@ -67,8 +69,8 @@ GitHub Pages serves the `main` branch root. `.nojekyll` keeps this as plain stat
 - Tracking is capped at 8 detectable faces. Group camera is opt-in; imported clips automatically scan for up to 8. Lite mode reduces flow/inference load; export quality is selected separately.
 - Exports preserve decoded photos within 8192 px / 32 MP, and source video dimensions up to 3840 px longest edge. Encoder constraints can require a lower size. Original resolution does not mean lossless encoding.
 - Browser recording codecs vary. Some social apps require converting WebM to MP4 outside MANLYFY.
-- Uploaded clips must decode in the browser. Original audio uses Web Audio where supported; unsupported codecs require an H.264 MP4 or WebM copy. Processing takes roughly the clip duration.
-- Record with the tab visible. Leaving the tab turns off camera/mic and stops recording. Clips stop at 3 minutes or roughly 100 MB to limit phone memory usage.
+- Uploaded clips must decode in the browser. Original audio uses Web Audio where supported; unsupported codecs require an H.264 MP4 or WebM copy. Precise processing may take longer than the clip; compatibility export runs during playback.
+- Record with the tab visible. Leaving the tab turns off camera/mic and stops recording. Clips stop at 3 minutes or 384 MB to limit phone memory usage.
 - Offline use requires the app/model/WASM assets to have loaded successfully first, and retained browser storage.
 - Real Android/iOS camera and microphone hardware, native sharing and install prompts require physical-device checks.
 

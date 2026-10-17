@@ -1,4 +1,5 @@
-import {associateFaces} from './face-identity.js?v=1.6.1';
+import {associateFaces} from './face-identity.js?v=1.7.0';
+import {fuseLandmarks} from './tracking-fusion.js?v=1.7.0';
 // Sparse Lucas–Kanade flow keeps the overlay current between neural face scans.
 // Frames and their pyramids live only in memory; nothing leaves the device.
 let enginePromise;
@@ -43,7 +44,7 @@ export class MotionTracker{
     // Preserve that valid anchor instead of treating the pause as lost frames.
     if(!this.current)return;const delta=time-this.current.time;if(delta<=0)return;
     const seen=new Set();
-    for(const frame of this.history){frame.time+=delta;for(const face of [...(frame.faces||[]),...(frame.identities||[])])if(!seen.has(face)){seen.add(face);for(const key of ['seeded','modelTime','lastSeen'])if(Number.isFinite(face[key]))face[key]+=delta;}}
+    for(const frame of this.history){frame.time+=delta;for(const face of [...(frame.faces||[]),...(frame.identities||[])])if(!seen.has(face)){seen.add(face);for(const key of ['seeded','modelTime','lastSeen','deadline'])if(Number.isFinite(face[key]))face[key]+=delta;}}
   }
   tick(source,time){
     if(!this.lib||!this.ctx||source.readyState<2||source.currentTime===this.lastVideoTime)return false;
@@ -106,14 +107,19 @@ export class MotionTracker{
       const nose=points[5];if(!nose||nose.x<0||nose.y<0||nose.x>1||nose.y>1)continue;
       let features=good.map(v=>v.q);const reseed=features.length<12||current.time-face.seeded>700;if(reseed)features=this.features(points,current);
       const dt=(current.time-previous.time)/1000,n=points[5],old=face.points[5];
-      output.push({...face,points,features,samples:(face.samples||0)+1,vx:dt>0?((n.x-old.x)/dt)*.75+(face.vx||0)*.25:0,vy:dt>0?((n.y-old.y)/dt)*.75+(face.vy||0)*.25:0,lastSeen:current.time,seeded:reseed?current.time:face.seeded,modelTime:face.modelTime});
+      output.push({...face,points,features,quality:good.length/count,samples:(face.samples||0)+1,vx:dt>0?((n.x-old.x)/dt)*.75+(face.vx||0)*.25:0,vy:dt>0?((n.y-old.y)/dt)*.75+(face.vy||0)*.25:0,lastSeen:current.time,seeded:reseed?current.time:face.seeded,modelTime:face.modelTime});
     }
-    return output.filter(face=>current.time-face.modelTime<1500);
+    return output.filter(face=>current.time-face.modelTime<1500&&(face.deadline===undefined||current.time<=face.deadline));
   }
-  seed(landmarks,frameId){
+  seed(landmarks,frameId,{stabilize=false,bridgeMs=0}={}){
     const index=this.history.findIndex(f=>f.id===frameId);if(index<0)return false;
     const start=this.history[index],references=start.identities?.length?start.identities:this.anchors.map(f=>({...f,lastSeen:start.time}));
-    let faces=associateFaces(references,landmarks,start.time,()=>++this.trackSerial).map(f=>({...f,features:this.features(f.points,start),seeded:start.time,modelTime:start.time}));
+    const active=new Map((start.faces||[]).map(f=>[f.trackId,f]));
+    let faces=associateFaces(references,landmarks,start.time,()=>++this.trackSerial).map(f=>{
+     const points=stabilize?fuseLandmarks(f.points,active.get(f.trackId),start.width,start.height):f.points;
+     return{...f,points,features:this.features(points,start),quality:1,seeded:start.time,modelTime:start.time};
+    });
+    if(bridgeMs>0){const observed=new Set(faces.map(f=>f.trackId));for(const old of active.values())if(faces.length<8&&!observed.has(old.trackId)&&old.features.length>=8&&(old.quality??1)>=.6&&start.time-old.modelTime<=bridgeMs)faces.push({...old,deadline:old.modelTime+bridgeMs});}
     start.faces=faces;start.identities=identities(faces,references,start.time);this.anchors=[];
     for(let i=index+1;i<this.history.length;i++){faces=this.follow(faces,this.history[i-1],this.history[i]);this.history[i].faces=faces;this.history[i].identities=identities(faces,this.history[i-1].identities,this.history[i].time);}
     this.faces=faces;return true;

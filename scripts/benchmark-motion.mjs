@@ -13,7 +13,7 @@ const error=(got,m)=>{const expected=transform({x:120,y:.46*height},m);return Ma
 import {execFileSync} from 'node:child_process';
 let Baseline;try{const source=execFileSync('git',['show','4bd841119361142bc95c098b48cd2ec72f8ed20e:src/motion.js'],{encoding:'utf8',stdio:['ignore','pipe','ignore']});Baseline=(await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'))).MotionTracker;}catch{console.warn('Historical baseline is not in this checkout; reporting current tracker only.');}
 const results=[];
-for(const [name,Type] of [...(Baseline?[['before 1.5.0',Baseline]]:[]),['after 1.6.1',MotionTracker]])for(const frequency of [.1,.3,.6]){
+for(const [name,Type] of [...(Baseline?[['before 1.5.0',Baseline]]:[]),['after 1.7.0',MotionTracker]])for(const frequency of [.1,.3,.6]){
  const tracker=new Type({library});tracker.push(image(),width,height,0);tracker.seed([points()],tracker.current.id);
  const errors=[],costs=[];let covered=0;
  for(let i=1;i<=36;i++){
