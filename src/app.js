@@ -1,17 +1,17 @@
-import {progressAt,unlockPhoto,cleanCount} from './progress.js?v=1.4.1';
-import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.4.1';
-import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,formatTime,cameraError} from './core.js?v=1.4.1';
-import {drawBandage} from './render.js?v=1.4.1';
-import {FaceTracker} from './tracker.js?v=1.4.1';
-import {MotionTracker} from './motion.js?v=1.4.1';
-import {CameraClock} from './camera-clock.js?v=1.4.1';
-import {decodePhoto,photoSelection} from './photos.js?v=1.4.1';
-import {detectPhotoFaces} from './photo-tracker.js?v=1.4.1';
-import {startGesture,moveGesture} from './gestures.js?v=1.4.1';
-import {fingerprint,ratingFamily,manlinessScore,manlinessJoke} from './manliness.js?v=1.4.1';
-import {openVideoFile,seekVideo,originalAudio,suspendOriginalAudio} from './video-import.js?v=1.4.1';
-import {playOutro,OUTRO_DURATION} from './video-outro.js?v=1.4.1';
-import {startVideoRecorder} from './video-recorder.js?v=1.4.1';
+import {progressAt,unlockPhoto,cleanCount} from './progress.js?v=1.5.0';
+import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.5.0';
+import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,formatTime,cameraError} from './core.js?v=1.5.0';
+import {drawBandage} from './render.js?v=1.5.0';
+import {FaceTracker} from './tracker.js?v=1.5.0';
+import {MotionTracker} from './motion.js?v=1.5.0';
+import {CameraClock} from './camera-clock.js?v=1.5.0';
+import {decodePhoto,photoSelection} from './photos.js?v=1.5.0';
+import {detectPhotoFaces} from './photo-tracker.js?v=1.5.0';
+import {startGesture,moveGesture} from './gestures.js?v=1.5.0';
+import {fingerprint,ratingFamily,manlinessScore,manlinessJoke} from './manliness.js?v=1.5.0';
+import {openVideoFile,seekVideo,originalAudio,suspendOriginalAudio} from './video-import.js?v=1.5.0';
+import {playOutro,OUTRO_DURATION} from './video-outro.js?v=1.5.0';
+import {startVideoRecorder} from './video-recorder.js?v=1.5.0';
 const $=id=>document.getElementById(id);
 const stage=$('stage'),ctx=stage.getContext('2d',{alpha:false}),video=$('sourceVideo');
 const tracker=new FaceTracker(),motion=new MotionTracker(),images=new Map(),cameraClock=new CameraClock(video,time=>loop(time));
@@ -25,6 +25,7 @@ let lastMotion=0,motionReady=false,renderCount=0,flowCount=0,metricStart=0,nextM
 const progressKey=testCamera?'manlyfy-test-progress-v1':'manlyfy-progress-v1';
 let photoCount=0,photoCredited=false,progressEligible=false,newestReward=null;
 let photoQueue=[],queueIndex=-1,rating=null,jokeVariant=0,lastRatingSignature='',ratingHistory=[];
+let photoIntent='filter';
 try{const saved=JSON.parse(localStorage.getItem('manlyfy-rating-history-v1')||'[]');if(Array.isArray(saved))ratingHistory=saved.slice(-200);}catch{}
 try{photoCount=cleanCount(JSON.parse(localStorage.getItem(progressKey)||'{}').photos);}catch{}
 const touches=new Map();let drag=null,toastTimer=null,deferredInstall=null,recordTimer=null,recordFailed=false;
@@ -85,6 +86,8 @@ function updateControls(){
   $('photoSaveBar').hidden=!photo||live||mode!=='photo';$('cancelDetection').hidden=!working||!photo||live;
   $('photoPrev').disabled=working||queueIndex<=0;$('photoNext').disabled=working||queueIndex>=photoQueue.length-1;
   $('chooseMorePhotos').disabled=working||recording;
+  for(const id of ['galleryPhotos','choosePhotoFiles','rankChoosePhoto','rankChooseFile'])$(id).disabled=working||recording;
+  $('photoImportBar').hidden=mode==='video';
   $('stopCamera').disabled=working||outroActive;
   document.querySelectorAll('.patch-card,.quick-patch,.category').forEach(b=>b.disabled=recording);
   for(const id of ['redetect','addPatch','mixGroup'])$(id).disabled=working||recording||!photo;
@@ -160,27 +163,29 @@ function stashPhoto(){
 function updatePhotoQueue(){
  $('photoQueue').hidden=!photoQueue.length;
  const item=photoQueue[queueIndex];$('photoFileLabel').textContent=item?`${queueIndex+1} / ${photoQueue.length} · ${item.file.name}`:'';
- $('photoQueueHint').textContent='Up to 8 faces per photo · edits stay on this device';updateControls();
+ $('photoQueueHint').textContent=(item?.importNote?item.importNote+' · ':'')+'Up to 8 faces per photo · edits stay on this device';updateControls();
 }
 function clearPhotoQueue(){photoQueue=[];queueIndex=-1;updatePhotoQueue();}
 async function loadQueuedPhoto(index){
  if(recording||working||!photoQueue[index])return;
  stashPhoto();stopLive(false);const token=++epoch,item=photoQueue[index];queueIndex=index;photo=null;patches=[];selected=null;compare=false;mirrored=false;mode='photo';
- $('compareBtn').setAttribute('aria-pressed','false');notice();busy(true,'Opening '+item.file.name+'…');updatePhotoQueue();$('viewfinder').scrollIntoView({block:'center',behavior:'smooth'});
+ $('compareBtn').setAttribute('aria-pressed','false');notice();busy(true,'Opening '+item.file.name+'…');updatePhotoQueue();if(!item.rankOnly)$('viewfinder').scrollIntoView({block:'center',behavior:'smooth'});
  try{
-  const c=await decodePhoto(item.file);if(token!==epoch)return;photo=c;progressEligible=item.eligible;photoCredited=item.credited;$('realBandage').checked=!!item.realBandage;showMedia();rate();resize();
+  const c=await decodePhoto(item.file,{onProgress:text=>$('busyText').textContent=text});if(token!==epoch)return;photo=c;item.importNote=c.dataset.importNote||'';progressEligible=item.eligible;photoCredited=item.credited;$('realBandage').checked=!!item.realBandage;showMedia();rate();resize();updatePhotoQueue();
   if(item.patches){
    patches=item.patches.map(p=>({...p}));selected=item.selected;await Promise.all(patches.map(p=>ensureDesign(p.design)));
    design=item.design||design;reflectDesign();rebuildNoses();render();busy(false);faceStatus(`${patches.length} ${patches.length===1?'nose':'noses'} · edits restored`);
-  }else await detectPhoto(token);
+  }else if(item.rankOnly){rebuildNoses();render();busy(false);faceStatus('Photo ready · no face required to rank');stashPhoto();}
+  else await detectPhoto(token);
+  if(item.rankOnly)$('manlinessLab').scrollIntoView({block:'start',behavior:'smooth'});
   if(item.demo)notice('Demo: NASA astronaut Eileen Collins, public-domain photograph. Your own uploads stay on your device.');
  }catch(e){
   if(token!==epoch)return;photo=null;patches=[];stage.hidden=true;$('welcome').hidden=false;$('viewfinder').classList.remove('has-media');notice(item.file.name+': '+e.message);toast(e.message);busy(false);faceStatus('Photo could not open · choose another',true);
  }
 }
-async function openPhotos(files,isDemo=false){
+async function openPhotos(files,isDemo=false,rankOnly=false){
  if(recording||working)return;const choice=photoSelection(files);if(!choice.selected.length){notice(choice.message||'Choose at least one photo.');toast(choice.message||'Choose a photo.');return;}
- photoQueue=choice.selected.map(file=>({file,patches:null,credited:false,eligible:!isDemo,demo:isDemo}));queueIndex=-1;await loadQueuedPhoto(0);if(choice.message){notice(choice.message);toast(choice.message);}
+ photoQueue=choice.selected.map(file=>({file,patches:null,credited:false,eligible:!isDemo,demo:isDemo,rankOnly}));queueIndex=-1;await loadQueuedPhoto(0);if(choice.message){notice(choice.message);toast(choice.message);}
 }
 async function openPhoto(file,isDemo=false){await openPhotos([file],isDemo);}
 $('cancelDetection').onclick=()=>{epoch++;busy(false);rebuildNoses();render();faceStatus('Search stopped · add a plaster manually',true);stashPhoto();};
@@ -291,7 +296,7 @@ async function takePhoto(){
 }
 async function ensureOutroLogo(){
  if(outroLogo)return outroLogo;
- if(!logoPromise){const img=new Image();img.src='assets/icons/manlyfy-star-plane-star.svg?v=1.4.1';logoPromise=img.decode().then(()=>outroLogo=img).catch(error=>{logoPromise=null;throw error;});}return logoPromise;
+ if(!logoPromise){const img=new Image();img.src='assets/icons/manlyfy-star-plane-star.svg?v=1.5.0';logoPromise=img.decode().then(()=>outroLogo=img).catch(error=>{logoPromise=null;throw error;});}return logoPromise;
 }
 function clearVideoResult(){
  $('resultVideo').pause();$('resultDialog').close();$('resultVideo').removeAttribute('src');$('resultVideo').load();
@@ -366,12 +371,14 @@ $('shareVideoInline').onclick=()=>resultBlob&&shareBlob(resultBlob,fileName(resu
 for(const id of ['quickSaveVideo','saveVideo'])$(id).onclick=()=>toast('Your MANLY video download is starting.');
 $('shutter').onclick=()=>recording?stopRecording():mode==='photo'?takePhoto():importedClip?processImportedClip():startRecording();
 $('flipBtn').onclick=()=>startCamera(facing==='user'?'environment':'user');
-for(const id of ['uploadBtn','welcomeUpload'])$(id).onclick=()=>(mode==='video'?$('videoFileInput'):$('fileInput')).click();$('chooseMorePhotos').onclick=()=>$('fileInput').click();
+function choosePictures(fromFiles=false,forRanking=false){if(working||recording)return;photoIntent=forRanking?'rank':'filter';$(fromFiles?'photoFilesInput':'fileInput').click();}
+for(const id of ['uploadBtn','welcomeUpload'])$(id).onclick=()=>mode==='video'?$('videoFileInput').click():choosePictures();$('chooseMorePhotos').onclick=()=>choosePictures();
+$('galleryPhotos').onclick=()=>choosePictures();$('choosePhotoFiles').onclick=()=>choosePictures(true);
 $('videoFileInput').onchange=()=>{const file=$('videoFileInput').files[0];$('videoFileInput').value='';if(file)importVideo(file);};
 $('clipPlay').onclick=async()=>{if(!importedClip||recording||working)return;const token=epoch;try{if(video.paused){busy(true,'Resuming your clip…');await tracker.whenIdle();if(token!==epoch)return;motion.resumePaused(performance.now());lastTracked=performance.now();lastInfer=lastTracked;await video.play();cameraClock.start();}else video.pause();}catch{if(token===epoch)notice('This browser could not play the clip. Try a compatible MP4 or WebM.');}finally{if(token===epoch)busy(false);}};
 $('clipSeek').onchange=async()=>{if(!importedClip||recording||working)return;const token=epoch,time=+$('clipSeek').value;cameraClock.stop();video.pause();busy(true,'Finding your nose at this moment…');try{await tracker.whenIdle();await seekVideo(video,time);if(token!==epoch)return;await prepareClipFrame(token);}catch(e){if(token===epoch)notice(e.message);}finally{if(token===epoch)busy(false);}};
 video.addEventListener('ended',()=>{if(!importedClip)return;if(recording)stopRecording();else updateControls();});
-$('fileInput').onchange=()=>{const files=Array.from($('fileInput').files);$('fileInput').value='';if(files.length)openPhotos(files);};
+for(const id of ['fileInput','photoFilesInput'])$(id).onchange=()=>{const files=Array.from($(id).files),rankOnly=photoIntent==='rank';$(id).value='';if(files.length)openPhotos(files,false,rankOnly);};
 $('photoPrev').onclick=()=>loadQueuedPhoto(queueIndex-1);$('photoNext').onclick=()=>loadQueuedPhoto(queueIndex+1);
 $('demoBtn').onclick=async()=>{try{const response=await fetch('assets/demo-astronaut.png');if(!response.ok)throw new Error();await openPhoto(new File([await response.blob()],'demo.png',{type:'image/png'}),true);}catch{notice('The demo could not load. Upload a photo or open your camera.');}};
 $('quickPrev').onclick=()=>$('quickPatches').scrollBy({left:-260,behavior:'smooth'});
@@ -388,7 +395,7 @@ $('removePatch').onclick=()=>{patches=patches.filter(p=>p.id!==selected);selecte
 $('redetect').onclick=()=>{if(working)return;notice();detectPhoto();};
 $('mixGroup').onclick=async()=>{await Promise.all(patches.map(async p=>{const pool=DESIGNS.filter(d=>canUse(d.id));p.design=pool[Math.floor(Math.random()*pool.length)].id;await ensureDesign(p.design);}));render();toast('Nobody in this group has the same personality.');};
 $('rerate').onclick=newPunchline;$('rankNewJoke').onclick=newPunchline;$('realBandage').onchange=()=>{lastRatingSignature='';updateManliness();stashPhoto();};
-$('rankChoosePhoto').onclick=()=>$('fileInput').click();$('rankAddPatch').onclick=()=>{if(!photo)return;if(!patches.length)$('addPatch').click();$('viewfinder').scrollIntoView({block:'center',behavior:'smooth'});};
+$('rankChoosePhoto').onclick=()=>choosePictures(false,true);$('rankChooseFile').onclick=()=>choosePictures(true,true);$('rankAddPatch').onclick=()=>{if(!photo)return;if(!patches.length)$('addPatch').click();$('viewfinder').scrollIntoView({block:'center',behavior:'smooth'});};
 for(const id of ['savePhoto','quickSavePhoto'])$(id).onclick=async()=>{try{downloadBlob(await photoBlob(),fileName('png'));}catch(e){notice(e.message);toast(e.message);}};
 $('sharePhoto').onclick=async()=>{try{await shareBlob(await photoBlob(),fileName('png'));}catch(e){notice(e.message);}};
 $('shareVideo').onclick=()=>{if(resultBlob)shareBlob(resultBlob,fileName(resultBlob.type.includes('mp4')?'mp4':'webm'));};
@@ -436,4 +443,4 @@ try{const p=JSON.parse(localStorage.getItem('manlyfy-prefs')||'{}');if(DESIGNS.s
 if(!canUse(design))design='classic';
 if(testCamera){const n=document.createElement('p');n.className='notice';n.textContent='VERIFICATION MODE · Simulated camera and audio only. Open the normal app URL for your real camera.';document.querySelector('main').prepend(n);}
 buildCollection();ensureDesign(design).then(()=>selectDesign(design,false));updateControls();
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.4.1',{updateViaCache:'none'}).catch(()=>{}));
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.5.0',{updateViaCache:'none'}).catch(()=>{}));

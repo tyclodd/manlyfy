@@ -1,0 +1,1 @@
+This deliberately unsupported text file is a negative import test. It contains no picture.

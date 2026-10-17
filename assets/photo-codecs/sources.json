@@ -1,0 +1,98 @@
+[
+  {
+    "file": "jpeg.js",
+    "url": "https://cdn.jsdelivr.net/npm/jpeg-js@0.4.4/lib/decoder.js",
+    "sha256": "a3f175fd6f62d142aad94d3bd90f3a30be4e076baf9b6a6fa31c8e84d9d4aa9f",
+    "adapter": ""
+  },
+  {
+    "file": "JPEG-LICENSE.txt",
+    "url": "https://cdn.jsdelivr.net/npm/jpeg-js@0.4.4/LICENSE",
+    "sha256": "c0a8512eabe960492fefd4f287523eb3b5ca1518ca37ef0ec83344cd7f089cb8",
+    "adapter": ""
+  },
+  {
+    "file": "upng.js",
+    "url": "https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.js",
+    "sha256": "b7c0bdb021dffeb82f1ac27c6762f939f967a9e4e0886518fef649331b612164",
+    "adapter": ""
+  },
+  {
+    "file": "UPNG-LICENSE.txt",
+    "url": "https://cdn.jsdelivr.net/npm/upng-js@2.1.0/LICENSE",
+    "sha256": "c1fb8861eca211bf5aea574358aba7039396c0c1824c2a1477cc126d398efd89",
+    "adapter": ""
+  },
+  {
+    "file": "utif.js",
+    "url": "https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.js",
+    "sha256": "e3e76115f49571e39624c3316a76b3c4c5b2c5ca518dfec4b66a9f7af8c6d059",
+    "adapter": ""
+  },
+  {
+    "file": "UTIF-LICENSE.txt",
+    "url": "https://cdn.jsdelivr.net/npm/utif@3.1.0/LICENSE",
+    "sha256": "c1fb8861eca211bf5aea574358aba7039396c0c1824c2a1477cc126d398efd89",
+    "adapter": ""
+  },
+  {
+    "file": "pako.min.js",
+    "url": "https://cdn.jsdelivr.net/npm/pako@1.0.11/dist/pako_inflate.min.js",
+    "sha256": "2ca27e9a8dae569cdeac42752ed1aed1afeff7f19282d3cc12c0aaa54a08bc04",
+    "adapter": ""
+  },
+  {
+    "file": "PAKO-LICENSE.txt",
+    "url": "https://cdn.jsdelivr.net/npm/pako@1.0.11/LICENSE",
+    "sha256": "a04665b3b2de56c66730c1f720f528175739e4104f79073614aa611da1e85539",
+    "adapter": ""
+  },
+  {
+    "file": "libheif.js",
+    "url": "https://cdn.jsdelivr.net/npm/heic-to@1.6.6/src/lib/libheif-without-unsafe-eval.js",
+    "sha256": "d6ad000a632567ef3b8ff13063fdaa0d6b9fa3a51f49f2e91aa15c994965ade8",
+    "adapter": "classic-worker-export"
+  },
+  {
+    "file": "HEIC-TO-LICENSE.txt",
+    "url": "https://cdn.jsdelivr.net/npm/heic-to@1.6.6/LICENSE",
+    "sha256": "dbd7222d8026e5d6ca6991d1e6a205de927f300840433c2e90a60644a9980c75",
+    "adapter": ""
+  },
+  {
+    "file": "HEIC-BUILD.md",
+    "url": "https://cdn.jsdelivr.net/npm/heic-to@1.6.6/README.md",
+    "sha256": "70b08f14342d7a3c811034600427fecb1a7b874e1dec3e8f6dc755b591742431",
+    "adapter": ""
+  },
+  {
+    "file": "pdf.min.mjs",
+    "url": "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/legacy/build/pdf.min.mjs",
+    "sha256": "bccc24ea711db8e44503629519904a5292d73b9daaa214bbe7cdcc282b0f4259",
+    "adapter": ""
+  },
+  {
+    "file": "pdf.worker.min.mjs",
+    "url": "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/legacy/build/pdf.worker.min.mjs",
+    "sha256": "145d2dd3ab0c86151011dba95acfa2d5336e2accd59388ea43dbee0efddaaec6",
+    "adapter": ""
+  },
+  {
+    "file": "PDFJS-LICENSE.txt",
+    "url": "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.4.299/LICENSE",
+    "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+    "adapter": ""
+  },
+  {
+    "file": "LIBHEIF-LICENSE.txt",
+    "url": "https://raw.githubusercontent.com/strukturag/libheif/v1.23.6/COPYING",
+    "sha256": "fa81ce652315b013359d6e8e4744335f31a50c7c192907176d3632f78a3b4596",
+    "adapter": ""
+  },
+  {
+    "file": "LIBDE265-LICENSE.txt",
+    "url": "https://raw.githubusercontent.com/strukturag/libde265/v1.0.16/COPYING",
+    "sha256": "02cc1585a20677992e0ba578fa692635dc193735f2691dc81de924b51c4e8020",
+    "adapter": ""
+  }
+]

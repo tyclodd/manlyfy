@@ -1,8 +1,8 @@
-import {FaceTracker} from '../src/tracker.js?v=1.4.1';
-import {MotionTracker,transform} from '../src/motion.js?v=1.4.1';
-import {landmarkToPatch,patchPose} from '../src/core.js?v=1.4.1';
-import {drawBandage} from '../src/render.js?v=1.4.1';
-import {loadPatchImage} from '../src/designs.js?v=1.4.1';
+import {FaceTracker} from '../src/tracker.js?v=1.5.0';
+import {MotionTracker,transform} from '../src/motion.js?v=1.5.0';
+import {landmarkToPatch,patchPose} from '../src/core.js?v=1.5.0';
+import {drawBandage} from '../src/render.js?v=1.5.0';
+import {loadPatchImage} from '../src/designs.js?v=1.5.0';
 const $=id=>document.getElementById(id);
 $('run').onclick=async()=>{
  $('run').disabled=true;$('results').textContent='Loading local models…';const tracker=new FaceTracker(),motion=new MotionTracker({maxEdge:$('lite').checked?256:320}),c=$('preview'),cx=c.getContext('2d'),source=document.createElement('canvas');source.width=512;source.height=512;const sx=source.getContext('2d',{willReadFrequently:true});
