@@ -1,6 +1,6 @@
 # MANLYFY — full conversation audit
 
-16 October 2026 · Release 1.3.2. This checklist includes the original build request and every later change. The most recent instruction controls when a design preference changed. Implementation is distinguished from verified browser behavior and physical-device checks.
+16 October 2026 · Release 1.4.1. This checklist includes the original build request and every later change. The most recent instruction controls when a design preference changed. Implementation is distinguished from verified browser behavior and physical-device checks.
 
 | Request | Implementation / evidence | Limit |
 | --- | --- | --- |
@@ -22,6 +22,8 @@
 | Front/rear camera | Facing-mode switching; camera and microphone stop when leaving the tab. | Physical camera hardware unavailable in cloud browser. |
 | Filtered recording with audio | Canvas capture + MediaRecorder, optional mic, supported codec selection, clear start/stop and timer. Filter is permanently drawn into the clip. | Real app synthetic-media recording, audible tone, download and playback verified. Physical microphone and device-specific MP4 behavior require phones. Clips stop at 3 minutes / ~100 MB. |
 | Upload existing videos | Mode-specific video picker; preview/play/pause/seek; real-time nose tracking and local filtered export from the first frame; original-audio checkbox. Actual 6-second H.264 MP4 import exported VP8/Opus with audible original tone, and a separate silent vertical MP4. | One clip, up to 3 minutes / 150 MB. Browser-decodable formats; keep tab visible. Codec and device limitations remain. |
+| Explicit video creation and immediate download | Large Create filtered video action, visible progress, then a persistent native Download video link next to the result. Preview is optional; no automatic result dialog blocks saving. | Input preview is not the encoded clip; the complete video must process in real time. |
+| Animated logo after videos | Optional three-second MANLYFY logo animation and “IT’S MANLY NOW.” appended inside the active canvas recording. Default on; can be disabled before processing. | Leaving the tab or hitting the memory limit stops immediately and can omit the ending. Device-specific encoding remains a check. |
 | Switch plaster before recording | Above-camera swipe carousel works before camera permission. Design controls lock during recording. | Only earned designs are wearable. |
 | At least 60 original children's designs | 75 designs: 3 plain starters + 72 unique illustrated rewards. Dinosaurs, unicorns, sharks, puppies, kittens, rainbows, aliens, pirates, princesses, monsters, robots and more. | Original generic motifs; no licensed cartoon characters or branded product art. |
 | Three basic starters and premium progression | Beige default, Plain Sky and Plain Blush. Playful → Deluxe → Legendary detail increases. | All rewards free; progress stays on this browser. |
@@ -36,7 +38,7 @@
 | Prepare a native-style filter | Reusable ZIP: all 75 SVG/PNG designs, manifest with milestones, purple app icons, geometry, canvas renderer and an interactive example. | Not a native-editor project or a published effect. Meta Spark third-party publishing closed in January 2025. |
 | PWA | Manifest, standalone app icons, service worker and local asset caching. Android installation instructions included. | Physical install/offline restart not verified here. |
 | Design | Mobile-first, large preview, childish premium-tech style, playful motion, visible camera/privacy feedback. | 320/390/1024 px layouts checked previously; combined update rechecked after publication. |
-| Latest logo request | Purple camera with bandage over lens; star → plane → star replaces dinosaur/butterfly. App icon PNGs and generator promo use the same artwork. | Supersedes the earlier neutral-color/dinosaur preference. |
+| Latest logo request | Purple camera with bandage over lens; star → plane → star replaces dinosaur/butterfly. The larger app header, browser icon, fresh Android/Apple icon filenames, filter kit and animated video ending use the same named SVG. The generator promo loads that canonical asset instead of a separate inline copy. Two gold stars flank a clearly drawn blue airplane. | Supersedes the earlier neutral-color/dinosaur preference. |
 | Creator support | Same public PayPal, Interac, Cameo and merch destinations as Manly Curses Generator. Label is “Support the MANLINESS.” | Optional links; no payments or purchases made. No “silly/silliness” copy retained in the app. |
 | Instagram and YouTube | Existing verified Tye Clodd Instagram/YouTube destinations. | No social messages or posts sent. |
 | Navigation between both apps | MANLYFY → Manly Curses Generator and reciprocal footer promo. | Generator edits are limited to the promo SVG, preserving concurrent work. |

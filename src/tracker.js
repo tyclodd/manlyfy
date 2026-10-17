@@ -1,4 +1,4 @@
-import {CpuFaceTracker} from './cpu-tracker.js?v=1.4.0';
+import {CpuFaceTracker} from './cpu-tracker.js?v=1.4.1';
 // One in-flight scan. Both neural backends prefer a worker, leaving UI and motion free.
 export class FaceTracker {
   constructor({forceMain=false,forceCpu=false}={}) {this.worker=null;this.workerKind=null;this.pending=new Map();this.serial=0;this.busy=false;this.ready=false;this.initPromise=null;this.mainModel=null;this.cpuModel=null;this.mainMode='IMAGE';this.mainCount=1;this.forceMain=forceMain;this.forceCpu=forceCpu;this.backend='not started';this.idlePromise=null;this.resolveIdle=null;}
@@ -15,7 +15,7 @@ export class FaceTracker {
   }
   makeWorker(file,kind){
     this.worker?.terminate();this.workerKind=kind;
-    this.worker=new Worker(new URL('./'+file+'?v=1.4.0',import.meta.url));
+    this.worker=new Worker(new URL('./'+file+'?v=1.4.1',import.meta.url));
     this.worker.onmessage=({data})=>{const p=this.pending.get(data.id);if(!p)return;clearTimeout(p.timer);this.pending.delete(data.id);data.error?p.reject(new Error(data.error)):p.resolve(data.landmarks||[]);};
     this.worker.onerror=e=>this.fail(new Error(e.message||'The worker tracker could not load.'));
   }

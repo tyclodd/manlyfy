@@ -8,7 +8,8 @@ App: https://tyclodd.github.io/manlyfy/
 
 ## Features implemented
 
-- Existing video uploads: preview, seek and apply the filter locally in real time, with optional original audio (one clip, up to 3 minutes / 150 MB).
+- Existing video uploads: preview and seek, then use the explicit Create filtered video button. Progress leads directly to a persistent, one-tap Download video link, with optional original audio (one clip, up to 3 minutes / 150 MB).
+- Optional three-second animated MANLYFY logo ending: “IT’S MANLY NOW.” Enabled by default; turn it off before creating a video for an ending-free export. The ending is permanently encoded after the clip.
 - Local photo upload (up to 10 selected photos), camera capture, higher-resolution/crop scans for smaller faces, and group photos (up to 8 faces). Navigation retains per-photo edits without decoding the entire batch into memory.
 - Drag, pinch to resize, twist to rotate, add and remove individual plasters; before/after comparison. One-tap Save photo sits beside the preview, with no reward modal interrupting the download.
 - 75 designs: three plain starters and 72 original illustrated rewards, categorized and swipeable on mobile. Photo milestones unlock Playful, Deluxe and Legendary artwork; all rewards are free.
@@ -37,6 +38,8 @@ Third-party runtime assets are pinned to `@mediapipe/tasks-vision` **0.10.32** a
 - `src/face-worker.js`, `src/tracker.js`: worker-first MediaPipe inference with automatic browser-canvas and CPU-only compatibility paths, one in-flight scan and timeouts. Single-face live mode is the default; photos always support up to 8 faces.
 - `src/cpu-worker.js`, `src/cpu-tracker.js`: CPU-only face-api inference in an OffscreenCanvas worker using RGB tensors, with a main-thread fallback for older browsers. No identity models.
 - `src/motion.js`: sparse Lucas–Kanade optical flow follows image features between neural scans at up to 30 updates/s (20 in Lite). It buffers up to 4 seconds of small grayscale frames and replays a delayed neural anchor to the current frame. The preview is never frozen to an old CPU scan. Confidence failures hide the overlay and await reacquisition. All frame buffers stay in memory; motion history is cleared when the camera stops.
+- `src/video-outro.js`: responsive canvas logo animation appended to the active recording, with an abort path when leaving the tab.
+- `src/video-recorder.js`: retries supported codecs when a mobile encoder rejects an advertised recording type.
 - `src/video-import.js`: local clip decoding, bounded duration/file size, seeking and reusable original-audio routing.
 - `src/progress.js`: local photo-count progression, reward packs and unlock thresholds.
 - `src/render.js`: curved, yaw-aware artwork wrapping over the nose bridge.

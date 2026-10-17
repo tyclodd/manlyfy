@@ -1,4 +1,4 @@
-import {clamp,patchPose} from './core.js?v=1.4.0';
+import {clamp,patchPose} from './core.js?v=1.4.1';
 const center=points=>({x:points.reduce((s,p)=>s+p.x,0)/points.length,y:points.reduce((s,p)=>s+p.y,0)/points.length});
 const distance=points=>points.length>1?Math.hypot(points[1].x-points[0].x,points[1].y-points[0].y):0;
 const angle=points=>points.length>1?Math.atan2(points[1].y-points[0].y,points[1].x-points[0].x):0;

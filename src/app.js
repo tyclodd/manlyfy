@@ -1,17 +1,17 @@
-import {progressAt,unlockPhoto,cleanCount} from './progress.js?v=1.4.0';
-import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.4.0';
-import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,formatTime,cameraError} from './core.js?v=1.4.0';
-import {drawBandage} from './render.js?v=1.4.0';
-import {FaceTracker} from './tracker.js?v=1.4.0';
-import {MotionTracker} from './motion.js?v=1.4.0';
-import {CameraClock} from './camera-clock.js?v=1.4.0';
-import {decodePhoto,photoSelection} from './photos.js?v=1.4.0';
-import {detectPhotoFaces} from './photo-tracker.js?v=1.4.0';
-import {startGesture,moveGesture} from './gestures.js?v=1.4.0';
-import {fingerprint,ratingFamily,manlinessScore,manlinessJoke} from './manliness.js?v=1.4.0';
-import {openVideoFile,seekVideo,originalAudio,suspendOriginalAudio} from './video-import.js?v=1.4.0';
-import {playOutro,OUTRO_DURATION} from './video-outro.js?v=1.4.0';
-import {startVideoRecorder} from './video-recorder.js?v=1.4.0';
+import {progressAt,unlockPhoto,cleanCount} from './progress.js?v=1.4.1';
+import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.4.1';
+import {clamp,containRect,outputSize,landmarkToPatch,smoothPatches,patchPose,hitPatch,formatTime,cameraError} from './core.js?v=1.4.1';
+import {drawBandage} from './render.js?v=1.4.1';
+import {FaceTracker} from './tracker.js?v=1.4.1';
+import {MotionTracker} from './motion.js?v=1.4.1';
+import {CameraClock} from './camera-clock.js?v=1.4.1';
+import {decodePhoto,photoSelection} from './photos.js?v=1.4.1';
+import {detectPhotoFaces} from './photo-tracker.js?v=1.4.1';
+import {startGesture,moveGesture} from './gestures.js?v=1.4.1';
+import {fingerprint,ratingFamily,manlinessScore,manlinessJoke} from './manliness.js?v=1.4.1';
+import {openVideoFile,seekVideo,originalAudio,suspendOriginalAudio} from './video-import.js?v=1.4.1';
+import {playOutro,OUTRO_DURATION} from './video-outro.js?v=1.4.1';
+import {startVideoRecorder} from './video-recorder.js?v=1.4.1';
 const $=id=>document.getElementById(id);
 const stage=$('stage'),ctx=stage.getContext('2d',{alpha:false}),video=$('sourceVideo');
 const tracker=new FaceTracker(),motion=new MotionTracker(),images=new Map(),cameraClock=new CameraClock(video,time=>loop(time));
@@ -291,7 +291,7 @@ async function takePhoto(){
 }
 async function ensureOutroLogo(){
  if(outroLogo)return outroLogo;
- if(!logoPromise){const img=new Image();img.src='assets/icons/icon.svg';logoPromise=img.decode().then(()=>outroLogo=img).catch(error=>{logoPromise=null;throw error;});}return logoPromise;
+ if(!logoPromise){const img=new Image();img.src='assets/icons/manlyfy-star-plane-star.svg?v=1.4.1';logoPromise=img.decode().then(()=>outroLogo=img).catch(error=>{logoPromise=null;throw error;});}return logoPromise;
 }
 function clearVideoResult(){
  $('resultVideo').pause();$('resultDialog').close();$('resultVideo').removeAttribute('src');$('resultVideo').load();
@@ -436,4 +436,4 @@ try{const p=JSON.parse(localStorage.getItem('manlyfy-prefs')||'{}');if(DESIGNS.s
 if(!canUse(design))design='classic';
 if(testCamera){const n=document.createElement('p');n.className='notice';n.textContent='VERIFICATION MODE · Simulated camera and audio only. Open the normal app URL for your real camera.';document.querySelector('main').prepend(n);}
 buildCollection();ensureDesign(design).then(()=>selectDesign(design,false));updateControls();
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.4.0',{updateViaCache:'none'}).catch(()=>{}));
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.4.1',{updateViaCache:'none'}).catch(()=>{}));
