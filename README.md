@@ -1,6 +1,6 @@
 # MANLYFY 💪🩹
 
-**Release 1.6.0:** faster live tracking with coarse fast-motion recovery, separate per-face designs for up to eight detected video faces, private creator access, frame-by-frame precise uploaded-video export, original dimensions up to 4K, and branded three-second endings. Photo imports preserve decoded resolution up to 8192 px / 32 MP. See [requirements audit](docs/REQUIREMENTS-AUDIT.md) and [current verification and limits](docs/TESTING.md). No perfect-tracking guarantee is made.
+**Release 1.6.1:** faster live tracking with coarse fast-motion recovery, separate per-face designs for up to eight detected video faces, private creator access, frame-by-frame precise uploaded-video export, original dimensions up to 4K, and branded three-second endings. Photo imports preserve decoded resolution up to 8192 px / 32 MP. See [requirements audit](docs/REQUIREMENTS-AUDIT.md) and [current verification and limits](docs/TESTING.md). No perfect-tracking guarantee is made.
 
 
 **The Manliest Camera on Earth.** A free, browser-local photo and video nose-plaster camera.

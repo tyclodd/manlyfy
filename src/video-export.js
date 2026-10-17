@@ -1,5 +1,5 @@
-import {exportSize,videoBitrate} from './export-quality.js?v=1.6.0';
-import {OUTRO_DURATION,drawOutro} from './video-outro.js?v=1.6.0';
+import {exportSize,videoBitrate} from './export-quality.js?v=1.6.1';
+import {OUTRO_DURATION,drawOutro} from './video-outro.js?v=1.6.1';
 
 export class ExportUnavailable extends Error{}
 const cancelled=signal=>{if(signal?.aborted)throw new DOMException('Export cancelled.','AbortError');};

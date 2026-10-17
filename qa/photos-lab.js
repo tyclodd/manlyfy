@@ -1,5 +1,5 @@
-import {decodePhoto} from '../src/photos.js?v=1.6.0';
-import {fingerprint,ratingFamily,manlinessScore} from '../src/manliness.js?v=1.6.0';
+import {decodePhoto} from '../src/photos.js?v=1.6.1';
+import {fingerprint,ratingFamily,manlinessScore} from '../src/manliness.js?v=1.6.1';
 const $=id=>document.getElementById(id);
 const cases=[
  ['Screenshot PNG','screenshot.png'],['JPEG','portrait.jpg'],['Progressive JPEG','progressive.jpg'],['CMYK JPEG','cmyk.jpg'],['WebP','portrait.webp'],['AVIF','portrait.avif'],['GIF still','portrait.gif'],['BMP','portrait.bmp'],['ICO','shapes.ico'],['SVG','shapes.svg'],['TIFF','portrait.tiff'],['HEIC','shapes.heic'],['PDF first page','photo.pdf'],

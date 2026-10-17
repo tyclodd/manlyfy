@@ -1,21 +1,21 @@
-import {progressAt,unlockPhoto,cleanCount} from './progress.js?v=1.6.0';
-import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.6.0';
-import {clamp,containRect,outputSize,landmarkToPatch,patchPose,hitPatch,formatTime,cameraError} from './core.js?v=1.6.0';
-import {drawBandage} from './render.js?v=1.6.0';
-import {FaceTracker} from './tracker.js?v=1.6.0';
-import {MotionTracker} from './motion.js?v=1.6.0';
-import {CameraClock} from './camera-clock.js?v=1.6.0';
-import {decodePhoto,photoSelection} from './photos.js?v=1.6.0';
-import {detectPhotoFaces} from './photo-tracker.js?v=1.6.0';
-import {startGesture,moveGesture} from './gestures.js?v=1.6.0';
-import {fingerprint,ratingFamily,manlinessScore,manlinessJoke} from './manliness.js?v=1.6.0';
-import {openVideoFile,seekVideo,originalAudio,suspendOriginalAudio} from './video-import.js?v=1.6.0';
-import {playOutro,OUTRO_DURATION} from './video-outro.js?v=1.6.0';
-import {startVideoRecorder} from './video-recorder.js?v=1.6.0';
-import {masterAccess,leaveMaster} from './access.js?v=1.6.0';
-import {associateFaces} from './face-identity.js?v=1.6.0';
-import {MAX_FACES,exportSize,videoBitrate,trackingProfile} from './export-quality.js?v=1.6.0';
-import {hasFrameExport,exportFilteredVideo,ExportUnavailable} from './video-export.js?v=1.6.0';
+import {progressAt,unlockPhoto,cleanCount} from './progress.js?v=1.6.1';
+import {DESIGNS,CATEGORIES,patchSVG,loadPatchImage} from './designs.js?v=1.6.1';
+import {clamp,containRect,outputSize,landmarkToPatch,patchPose,hitPatch,formatTime,cameraError} from './core.js?v=1.6.1';
+import {drawBandage} from './render.js?v=1.6.1';
+import {FaceTracker} from './tracker.js?v=1.6.1';
+import {MotionTracker} from './motion.js?v=1.6.1';
+import {CameraClock} from './camera-clock.js?v=1.6.1';
+import {decodePhoto,photoSelection} from './photos.js?v=1.6.1';
+import {detectPhotoFaces} from './photo-tracker.js?v=1.6.1';
+import {startGesture,moveGesture} from './gestures.js?v=1.6.1';
+import {fingerprint,ratingFamily,manlinessScore,manlinessJoke} from './manliness.js?v=1.6.1';
+import {openVideoFile,seekVideo,originalAudio,suspendOriginalAudio} from './video-import.js?v=1.6.1';
+import {playOutro,OUTRO_DURATION} from './video-outro.js?v=1.6.1';
+import {startVideoRecorder} from './video-recorder.js?v=1.6.1';
+import {masterAccess,leaveMaster} from './access.js?v=1.6.1';
+import {associateFaces} from './face-identity.js?v=1.6.1';
+import {MAX_FACES,exportSize,videoBitrate,trackingProfile} from './export-quality.js?v=1.6.1';
+import {hasFrameExport,exportFilteredVideo,ExportUnavailable} from './video-export.js?v=1.6.1';
 const $=id=>document.getElementById(id);
 const stage=$('stage'),ctx=stage.getContext('2d',{alpha:false}),video=$('sourceVideo');
 const tracker=new FaceTracker(),motion=new MotionTracker(),images=new Map(),cameraClock=new CameraClock(video,time=>loop(time));
@@ -47,12 +47,15 @@ function resetFaceStyles(){faceDesigns.clear();faceLabels.clear();clipAnchors=[]
 function labelFace(id){if(!faceLabels.has(id))faceLabels.set(id,faceLabels.size+1);return faceLabels.get(id);}
 function rebuildFacePicker(){
  const active=!!(photo||live)&&patches.length>0;$('faceStyling').hidden=!active;
- const signature=patches.map(p=>p.id+':'+p.design).join('|')+':'+designTarget+':'+recording+':'+!!frameExport+':'+working;if(signature===facePickerSignature)return;facePickerSignature=signature;
+ const signature=patches.map(p=>p.id+':'+p.design).join('|')+':'+designTarget+':'+recording+':'+!!frameExport+':'+working+':'+!!importedClip+':'+(video.currentTime<.05);if(signature===facePickerSignature)return;facePickerSignature=signature;
  const all=document.createElement('option');all.value='all';all.textContent='Everyone · same design';
  const options=patches.map(p=>{const o=document.createElement('option');o.value=p.id;o.textContent='Face '+labelFace(p.id)+' · '+DESIGNS.find(d=>d.id===p.design)?.name;return o;});
  $('designTarget').replaceChildren(all,...options);
  if(designTarget!=='all'&&!patches.some(p=>p.id===designTarget))designTarget='all';$('designTarget').value=designTarget;$('designTarget').disabled=recording||!!frameExport||working;
  $('faceStyleHint').textContent=designTarget==='all'?'Choose a face to give it its own design. Choose Everyone to change the whole group.':'The carousel changes only Face '+labelFace(designTarget)+'. Its design follows its track.';
+ if(importedClip)$('faceStyleHint').textContent='Set individual designs at the start, then they follow their tracks through the clip. Everyone changes the whole group.';
+ $('styleFromStart').hidden=!importedClip||video.currentTime<.05;$('styleFromStart').disabled=working||recording||!!frameExport;
+ $('mixFaces').disabled=working||recording||!!frameExport||!!importedClip&&video.currentTime>=.05;
 }
 function inferenceFrame(source,edge){
  const w=source.videoWidth||source.width,h=source.videoHeight||source.height,s=Math.min(1,edge/Math.max(w,h));
@@ -132,6 +135,7 @@ async function ensureDesign(id){if(!images.has(id))images.set(id,await loadPatch
 function canUse(id){const index=DESIGNS.findIndex(d=>d.id===id);return index>=0&&(master||index<progressAt(photoCount,DESIGNS.length).unlocked);}
 async function selectDesign(id,announce=true){
  if(recording||frameExport)return;if(!canUse(id)){const at=unlockPhoto(DESIGNS.findIndex(d=>d.id===id));toast(`Unlocks at ${at} photos. ${Math.max(0,at-photoCount)} more to go. Your nose believes in you.`);return;}
+ if(importedClip&&designTarget!=='all'&&video.currentTime>=.05){notice('For individual video designs, tap Style from start, choose a numbered face, then choose its plaster. Everyone can be changed from any preview position.');return;}
  const request=++designRequest,target=designTarget;await ensureDesign(id);if(request!==designRequest)return;
  if(target==='all'){design=id;faceDesigns.clear();patches=patches.map(p=>({...p,design:id}));}
  else{faceDesigns.set(target,id);patches=patches.map(p=>p.id===target?{...p,design:id}:p);}
@@ -179,7 +183,7 @@ function creditPhoto(){
   $('rewardDetails').hidden=false;$('rewardDetails').textContent=earned.length===1?'New: '+earned[0].name+' ↗':earned.length+' new patches ↗';toast('Unlocked! '+earned.map(d=>d.name).join(', ')+'.');
  }else toast(`Photo ${photoCount}. ${after.next?after.next.photos-photoCount+' to your next unlock.':'Legendary status maintained.'}`);
 }
-function savePref(){try{localStorage.setItem('manlyfy-prefs',JSON.stringify({version:'1.6.0',design,ratio:$('ratio').value,quality:$('quality').value,exportQuality:$('exportQuality').value,groupLive:$('groupToggle').checked,videoEnding:$('includeOutro').checked}));}catch{}}
+function savePref(){try{localStorage.setItem('manlyfy-prefs',JSON.stringify({version:'1.6.1',design,ratio:$('ratio').value,quality:$('quality').value,exportQuality:$('exportQuality').value,groupLive:$('groupToggle').checked,videoEnding:$('includeOutro').checked}));}catch{}}
 async function waitIdle(){await tracker.whenIdle();}
 async function detectPhoto(token=epoch){
   if(!photo)return;busy(true,'Finding every magnificent nose…');
@@ -375,7 +379,7 @@ async function takePhoto(){
 }
 async function ensureOutroLogo(){
  if(outroLogo)return outroLogo;
- if(!logoPromise){const img=new Image();img.src='assets/icons/manlyfy-star-plane-star.svg?v=1.6.0';logoPromise=img.decode().then(()=>outroLogo=img).catch(error=>{logoPromise=null;throw error;});}return logoPromise;
+ if(!logoPromise){const img=new Image();img.src='assets/icons/manlyfy-star-plane-star.svg?v=1.6.1';logoPromise=img.decode().then(()=>outroLogo=img).catch(error=>{logoPromise=null;throw error;});}return logoPromise;
 }
 function clearVideoResult(){
  $('resultVideo').pause();$('resultDialog').close();$('resultVideo').removeAttribute('src');$('resultVideo').load();
@@ -448,6 +452,7 @@ $('cancelExport').onclick=()=>{frameExport?.abort();$('videoProgressText').textC
 $('exportQuality').onchange=()=>{resize();savePref();};
 $('leaveMaster').onclick=()=>{if(working||recording||frameExport)return;leaveMaster();master=false;resetFaceStyles();if(!canUse(design))design='classic';patches=patches.map(p=>({...p,design}));buildCollection();ensureDesign(design).then(()=>{reflectDesign();render();});updateControls();toast('Regular edition. Your earned progress is kept.');};
 $('designTarget').onchange=()=>{designTarget=$('designTarget').value;if(designTarget!=='all')selected=designTarget;facePickerSignature='';reflectDesign();rebuildFacePicker();render();};
+$('styleFromStart').onclick=async()=>{if(!importedClip||working||recording||frameExport)return;$('clipSeek').value=0;await $('clipSeek').onchange();if(importedClip)toast('At the start. Choose a numbered face, then its design.');};
 $('mixFaces').onclick=async()=>{if(working||recording||frameExport)return;const pool=DESIGNS.filter(d=>canUse(d.id));for(const p of patches){p.design=pool[Math.floor(Math.random()*pool.length)].id;faceDesigns.set(p.id,p.design);await ensureDesign(p.design);}render();stashPhoto();};
 $('includeOutro').onchange=savePref;
 $('previewVideo').onclick=()=>{if(resultBlob)$('resultDialog').showModal();};
@@ -537,8 +542,8 @@ $('installBtn').onclick=async()=>{if(deferredInstall){await deferredInstall.prom
 window.addEventListener('appinstalled',()=>toast('Installed. Your nose has a home screen now.'));
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&live){frameExport?.abort();stopLive(true);notice('Processing stopped because you left the tab. Keep MANLYFY visible while creating a video.');}});
 window.addEventListener('pagehide',()=>{frameExport?.abort();stopLive(false);tracker.dispose();});
-try{const p=JSON.parse(localStorage.getItem('manlyfy-prefs')||'{}');if(DESIGNS.some(d=>d.id===p.design))design=p.design;if(['original','square','vertical'].includes(p.ratio))$('ratio').value=p.ratio;if(p.quality==='lite'||p.version==='1.6.0'&&['balanced','precision'].includes(p.quality))$('quality').value=p.quality;if(['source','1080','720'].includes(p.exportQuality))$('exportQuality').value=p.exportQuality;if(typeof p.groupLive==='boolean')$('groupToggle').checked=p.groupLive;if(master&&typeof p.videoEnding==='boolean')$('includeOutro').checked=p.videoEnding;}catch{}
+try{const p=JSON.parse(localStorage.getItem('manlyfy-prefs')||'{}');if(DESIGNS.some(d=>d.id===p.design))design=p.design;if(['original','square','vertical'].includes(p.ratio))$('ratio').value=p.ratio;if(p.quality==='lite'||p.version&&['balanced','precision'].includes(p.quality))$('quality').value=p.quality;if(['source','1080','720'].includes(p.exportQuality))$('exportQuality').value=p.exportQuality;if(typeof p.groupLive==='boolean')$('groupToggle').checked=p.groupLive;if(master&&typeof p.videoEnding==='boolean')$('includeOutro').checked=p.videoEnding;}catch{}
 if(!canUse(design))design='classic';
 if(testCamera){const n=document.createElement('p');n.className='notice';n.textContent='VERIFICATION MODE · Simulated camera and audio only. Open the normal app URL for your real camera.';document.querySelector('main').prepend(n);}
 buildCollection();ensureDesign(design).then(()=>selectDesign(design,false));updateControls();
-if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.6.0',{updateViaCache:'none'}).catch(()=>{}));
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=1.6.1',{updateViaCache:'none'}).catch(()=>{}));

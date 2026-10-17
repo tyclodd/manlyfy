@@ -1,4 +1,4 @@
-import {outputSize} from './core.js?v=1.6.0';
+import {outputSize} from './core.js?v=1.6.1';
 export const MAX_FACES=8;
 export function exportSize(width,height,ratio='original',quality='source'){
  return outputSize(width,height,ratio,quality==='1080'?1920:quality==='720'?1280:3840);

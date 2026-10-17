@@ -1,8 +1,10 @@
 # MANLYFY verification record
 
-17 October 2026 · Current release 1.6.0 · https://tyclodd.github.io/manlyfy/
+17 October 2026 · Current release 1.6.1 · https://tyclodd.github.io/manlyfy/
 
-## 1.6.0 current validation
+## 1.6.1 current validation
+
+A final source review added an explicit Style from start action after seeking. Individual video styles are configured on the initial frame, so preview-only track IDs cannot silently replace initial export IDs. Global Everyone changes still work from any preview position.
 
 - `npm run check`: all owned JavaScript syntax, local imports, unique HTML IDs and referenced controls pass; **51 tests pass**.
 - Real jsfeat optical flow on deterministic textured frames: translation, rotation, scale, delayed neural anchors, rapid reversals, occlusion, paused-media resumption, short missed detections and identity preservation pass.

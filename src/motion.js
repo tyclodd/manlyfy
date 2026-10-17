@@ -1,4 +1,4 @@
-import {associateFaces} from './face-identity.js?v=1.6.0';
+import {associateFaces} from './face-identity.js?v=1.6.1';
 // Sparse Lucas–Kanade flow keeps the overlay current between neural face scans.
 // Frames and their pyramids live only in memory; nothing leaves the device.
 let enginePromise;

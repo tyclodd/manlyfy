@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#fffaf0"><meta name="description" content="The Manliest Camera on Earth. Add playful nose plasters to photos and live videos. Free, private photo & video filters.">
 <meta property="og:title" content="MANLYFY — The Manliest Camera on Earth"><meta property="og:description" content="One tiny plaster. Unreasonable amounts of MANLY. Free photo & video camera. 75 original patches. All on your device."><meta property="og:type" content="website">
 <title>MANLYFY — The Manliest Camera on Earth</title>
-<link rel="icon" href="assets/icons/manlyfy-star-plane-star.svg?v=1.6.0" type="image/svg+xml"><link rel="apple-touch-icon" href="assets/manlyfy-star-plane-star-192.png?v=1.6.0"><link rel="manifest" href="manifest.webmanifest?v=1.6.0"><link rel="stylesheet" href="styles.css?v=1.6.0">
+<link rel="icon" href="assets/icons/manlyfy-star-plane-star.svg?v=1.6.1" type="image/svg+xml"><link rel="apple-touch-icon" href="assets/manlyfy-star-plane-star-192.png?v=1.6.1"><link rel="manifest" href="manifest.webmanifest?v=1.6.1"><link rel="stylesheet" href="styles.css?v=1.6.1">
 </head>
 <body>
 <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs>
@@ -23,7 +23,7 @@
 <symbol id="i-mic" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="13" rx="4"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v4m-4 0h8"/></symbol>
 </defs></svg>
 <header class="site-header">
-<a class="brand" href="./" aria-label="MANLYFY home"><img src="assets/icons/manlyfy-star-plane-star.svg?v=1.6.0" width="52" height="52" alt="Purple camera with a star, airplane, star plaster"><span>MANLYFY<span class="brand-dot">.</span></span></a>
+<a class="brand" href="./" aria-label="MANLYFY home"><img src="assets/icons/manlyfy-star-plane-star.svg?v=1.6.1" width="52" height="52" alt="Purple camera with a star, airplane, star plaster"><span>MANLYFY<span class="brand-dot">.</span></span></a>
 <span class="tagline">The Manliest Camera on Earth.</span>
 <div class="header-actions"><span class="free-badge">100% FREE. 200% MANLY.</span><button class="quiet" id="installBtn" aria-label="Install MANLYFY"><svg class="icon"><use href="#i-download"/></svg><span>Install app</span></button><button class="help-button" id="helpBtn" aria-label="Help and privacy">?</button></div>
 </header>
@@ -38,7 +38,7 @@
 <div class="quick-heading"><span class="mini-label">PICK YOUR PATCH <b>↔ SWIPE</b></span><strong id="quickName">The Original</strong><div><button id="quickPrev" aria-label="Previous plasters">‹</button><button id="quickNext" aria-label="Next plasters">›</button></div></div>
 <div class="quick-patches" id="quickPatches" role="group" aria-label="Camera plaster carousel"></div>
 </section>
-<section id="faceStyling" class="face-styling" aria-label="Choose a design for each face" hidden><div><label for="designTarget">STYLE YOUR FACES</label><select id="designTarget"><option value="all">Everyone · same design</option></select></div><p id="faceStyleHint">Choose a face, then choose its plaster from the carousel.</p><button class="quiet" id="mixFaces">Mix their designs ↻</button></section>
+<section id="faceStyling" class="face-styling" aria-label="Choose a design for each face" hidden><div><label for="designTarget">STYLE YOUR FACES</label><select id="designTarget"><option value="all">Everyone · same design</option></select></div><p id="faceStyleHint">Choose a face, then choose its plaster from the carousel.</p><button class="quiet" id="styleFromStart" hidden>Style from start ↶</button><button class="quiet" id="mixFaces">Mix their designs ↻</button></section>
 <div class="photo-import-bar" id="photoImportBar"><div><strong>Screenshots? Absolutely.</strong><small>Pictures from Gallery or Files. PDFs open page 1.</small></div><div><button id="galleryPhotos">Gallery</button><button id="choosePhotoFiles">Choose files</button></div></div>
 <section id="photoQueue" class="photo-queue" aria-label="Selected photos" hidden><div><strong id="photoFileLabel"></strong><small id="photoQueueHint">Up to 8 faces per photo</small></div><div class="photo-queue-actions"><button id="photoPrev" aria-label="Previous photo">‹</button><button id="photoNext" aria-label="Next photo">›</button><button id="chooseMorePhotos">Choose photos</button></div></section>
 <div id="notice" class="notice" role="status" hidden></div><section class="clip-controls" id="clipControls" aria-label="Uploaded video" hidden><strong id="clipName"></strong><div><button id="clipPlay">Play preview</button><span id="clipDuration">00:00</span><label><input id="keepClipAudio" type="checkbox" checked>Keep original audio</label></div><label class="sr-only" for="clipSeek">Video position</label><input id="clipSeek" type="range" min="0" max="1" step=".05" value="0"></section>
@@ -102,5 +102,5 @@
 <dialog id="resultDialog"><div class="dialog-head"><h2>MANLYFICATION complete.</h2><button class="icon-button" data-close="resultDialog" aria-label="Close video preview"><svg class="icon"><use href="#i-close"/></svg></button></div><video id="resultVideo" controls playsinline></video><p id="resultInfo"></p><div class="export-actions"><a class="button primary" id="saveVideo" download><svg class="icon"><use href="#i-download"/></svg>Download video</a><button class="button secondary" id="shareVideo"><svg class="icon"><use href="#i-share"/></svg>Share</button></div><p class="muted">The plaster is baked into your video. Your chosen ending is included in the download.</p></dialog>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 <noscript><p class="notice">MANLYFY needs JavaScript for its local photo and video editor.</p></noscript>
-<script type="module" src="src/app.js?v=1.6.0"></script>
+<script type="module" src="src/app.js?v=1.6.1"></script>
 </body></html>
